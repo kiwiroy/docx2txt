@@ -3,7 +3,7 @@
 #
 
 NAME = docx2txt
-VERSION = 0.1
+VERSION = 0.2
 INSTALLDIR = /usr/local/bin
 CP = /usr/bin/cp
 CHMOD = /usr/bin/chmod

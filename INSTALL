@@ -1,8 +1,7 @@
 1. Adjust various executables and installation directory paths for your system.
    - #! paths for bash and perl in docx2txt.sh and docx2txt.pl
-   - paths for unzip, sed and rm in docx2txt.sh
+   - path for unzip in docx2txt.pl
    - install directory, and paths for cp and chmod in Makefile
 
-2. Adjust RMFLAGS in docx2txt.sh to suite your patience. :)
-3. Run 'make install' as root.
+2. Run 'make install' as root.
 

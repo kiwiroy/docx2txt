@@ -11,3 +11,11 @@ text extraction.
 - character conversions (" ' < & > - ... etc.). Euro character is converted to
   E, however you can change this behaviour by comment-uncomment in perl script.
 
+
+v0.2 : 15/08/2008
+
+Docx text extraction can now be done in two ways (check version README for
+further details).
+- docx2txt.sh file.docx
+- docx2txt.pl infile.docx outfile.txt 
+

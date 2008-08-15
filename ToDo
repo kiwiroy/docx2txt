@@ -1,14 +1,6 @@
-1. Shift some logic from shell script to perl script, so that standalone perl
-   script can also be used to extract text from docx files.
-2. Use unzip in better way and simplify shell script.
-3. Handle footnotes.
-4. Handle lists in better way.
+1. Handle footnotes.
+2. Handle lists in better way.
+3. Create a simple manpage, hopefully after resolving footnote and list issues.
+4. Explore what can be done to make installation less involving for the user.
 5. XML parsing??? and making things more efficient. When it has matured enough,
    may be a C/C++ version should be looked into.
-
-Atleast 1 and 2 should be handled in a week since v0.1 release. Reasonable
-progress has already been made on 1,2 and 4.
-
-Current release has been pending since almost two weeks. There is no end to
-improvements. :)
-
