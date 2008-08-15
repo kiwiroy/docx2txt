@@ -18,11 +18,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 #
-# A simple .docx to text converter
+# A simple .docx to .txt converter
 #
-# Saves output in filename.txt if argument filename ends in .docx (except for
-# the case ".docx"), otherwise appends ".txt" to argument for the output
-# filename.
+# This script is a wrapper around core docx2txt.pl and saves text output for
+# (filename or) filename.docx in filename.txt .
 #
 # Author : Sandeep Kumar (shimple0 -AT- Yahoo .DOT. COM)
 #
@@ -31,10 +30,9 @@
 #    10/08/2008 - Initial version (v0.1)
 #    15/08/2008 - Invoking docx2txt.pl with docx document instead of xml file,
 #                 so don't need unzip and rm actions now.
+#                 Removed dependency on sed for generating output filename.
 #
 
-
-SED=/usr/bin/sed
 
 MYLOC=`dirname "$0"`	# invoked perl script docx2txt.pl is expected here.
 
@@ -53,26 +51,8 @@ then
 fi
 
 
-#
-# $1 : path to executable
-#
-function check_for_executable ()
-{
-    if [ ! -x "$1" ]
-    then
-        echo -e "Check if <$1> exists and is executable!"
-        xcheck=1
-    fi
-}
-
-xcheck=0
-check_for_executable "$SED"
-[ $xcheck -ne 0 ] && exit 1
-
-
-TEXTFILE=`echo "$1" | $SED 's/\.docx$//'`
-[ -z "$TEXTFILE" ] && TEXTFILE="$1" 
-TEXTFILE="$TEXTFILE.txt"
+TEXTFILE=${1/%.docx/.txt}
+[ "$1" == "$TEXTFILE" ] && TEXTFILE="$1.txt" 
 
 
 #
