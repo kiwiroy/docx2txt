@@ -29,13 +29,12 @@
 # ChangeLog :
 #
 #    10/08/2008 - Initial version (v0.1)
+#    15/08/2008 - Invoking docx2txt.pl with docx document instead of xml file,
+#                 so don't need unzip and rm actions now.
 #
 
 
-UNZIP=/usr/bin/unzip
 SED=/usr/bin/sed
-RM=/usr/bin/rm
-RMFLAGS="-i"		# change to -f, when you are comfortable.
 
 MYLOC=`dirname "$0"`	# invoked perl script docx2txt.pl is expected here.
 
@@ -67,9 +66,7 @@ function check_for_executable ()
 }
 
 xcheck=0
-check_for_executable "$UNZIP"
 check_for_executable "$SED"
-check_for_executable "$RM"
 [ $xcheck -ne 0 ] && exit 1
 
 
@@ -77,7 +74,6 @@ TEXTFILE=`echo "$1" | $SED 's/\.docx$//'`
 [ -z "$TEXTFILE" ] && TEXTFILE="$1" 
 TEXTFILE="$TEXTFILE.txt"
 
-XMLFILE="word/document.xml"
 
 #
 # $1 : filename to check for existence
@@ -97,27 +93,18 @@ function check_for_existence ()
 }
 
 echeck=0
-check_for_existence "$XMLFILE"  "Extracted XML file"
 check_for_existence "$TEXTFILE" "Output text file"
 [ $echeck -ne 0 ] && exit 1
 
-if [ -d word ]
+#
+# Invoke perl script to do the actual text extraction
+#
+
+"$MYLOC/docx2txt.pl" "$1" "$TEXTFILE"
+if [ $? == 0 ]
 then
-    created=0
+    echo "Text extracted from <$1> is available in <$TEXTFILE>."
 else
-    created=1
-fi
-
-# echo "y" | "$UNZIP" -x "$1" "$XMLFILE" >/dev/null
-echo "y" | "$UNZIP" -x "$1" "$XMLFILE" >/dev/null 2>/dev/null
-"$MYLOC/docx2txt.pl" "$XMLFILE" > "$TEXTFILE"
-
-echo -e "\nExtracted text from <$1> is available in <$TEXTFILE>\n"
-
-if [ $created -eq 1 ]
-then
-    $RM $RMFLAGS -r word
-else
-    $RM $RMFLAGS "$XMLFILE"
+    echo "Failed to extract text from <$1>!"
 fi
 

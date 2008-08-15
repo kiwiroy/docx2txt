@@ -24,29 +24,59 @@
 #
 # ChangeLog :
 #
-#	10/08/2008 - Initial version (v0.1)
+#    10/08/2008 - Initial version (v0.1)
+#    15/08/2008 - Script takes two arguments [second optional] now and can be
+#                 used independently to extract text from docx file. It accepts
+#                 docx file directly, instead of xml file.
 #
 
 
 #
-# Settings
+# Adjust the settings here.
 #
 
+my $unzip = "/usr/bin/unzip";
 my $nl = "\n";		# Alternative is "\r\n".
 my $lindent = "  ";	# Indent nested lists by "\t", " " etc.
 
 # ToDo: Better list handling. Currently assumed 8 level nesting.
 my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
 
-sub readfile {
-    local $/ = undef;
 
-    open my $fh, $_[0];
-    my $readfile = <$fh>;
-    return $readfile;
+#
+# Check argument(s) sanity.
+#
+
+(@ARGV == 1 || @ARGV == 2) || die "Usage: $ARGV <infile.docx> [outfile.txt]\n";
+
+stat($ARGV[0]);
+die "Can't read docx file <$ARGV[0]>!\n" if ! (-f _ && -r _);
+die "<$ARGV[0]> does not seem to be docx file!\n" if -T _;
+
+
+#
+# Extract needed data from argument docx file.
+#
+
+my $content = `$unzip -p '$ARGV[0]' word/document.xml 2>/dev/null`;
+die "Failed to extract required information from <$ARGV[0]>!\n" if ! $content;
+
+
+#
+# Be ready for outputting the extracted text contents.
+#
+
+my $txtfile;
+if (@ARGV == 1) {
+    $txtfile = \*STDOUT;
+} else {
+    open($txtfile, "> $ARGV[1]") || die "Can't create <$ARGV[1]> for output!\n";
 }
 
-my $content = readfile("$ARGV[0]");
+
+#
+# Text extraction starts.
+#
 
 $content =~ s/<?xml .*?\?>(\r)?\n//;
 
@@ -92,5 +122,11 @@ $content =~ s/&amp;/&/ogi;
 $content =~ s/&lt;/</ogi;
 $content =~ s/&gt;/>/ogi;
 
-print $content;
+
+#
+# Write the extracted and converted text contents to output.
+#
+
+print $txtfile $content;
+close $txtfile;
 
