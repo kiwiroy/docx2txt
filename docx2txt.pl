@@ -28,6 +28,8 @@
 #    15/08/2008 - Script takes two arguments [second optional] now and can be
 #                 used independently to extract text from docx file. It accepts
 #                 docx file directly, instead of xml file.
+#    18/08/2008 - Added support for center and right justification of text that
+#                 fits in a line 80 characters wide (adjustable).
 #
 
 
@@ -38,6 +40,7 @@
 my $unzip = "/usr/bin/unzip";
 my $nl = "\n";		# Alternative is "\r\n".
 my $lindent = "  ";	# Indent nested lists by "\t", " " etc.
+my $lwidth = 80;	# Line width, used for short line justification.
 
 # ToDo: Better list handling. Currently assumed 8 level nesting.
 my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
@@ -75,6 +78,32 @@ if (@ARGV == 1) {
 
 
 #
+# Subroutines for center and right justification of text in a line.
+#
+
+sub cjustify {
+	my $len = length $_[0];
+
+	if ($len < ($lwidth - 1)) {
+		my $lsp = ($lwidth - $len) / 2;
+		return ' ' x $lsp . $_[0];
+	} else {
+		return $_[0];
+	}
+}
+
+sub rjustify {
+	my $len = length $_[0];
+
+	if ($len < $lwidth) {
+		return ' ' x ($lwidth - $len) . $_[0];
+	} else {
+		return $_[0];
+	}
+}
+
+
+#
 # Text extraction starts.
 #
 
@@ -98,6 +127,10 @@ $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$lindent x $1 . "$levchar[$1] 
 # $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|'*' x ($1+1) . ' '|oge;
 
 $content =~ s{<w:caps/>.*?(<w:t>|<w:t [^>]+>)(.*?)</w:t>}/uc $2/oge;
+
+$content =~ s{<w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t>(.*?)</w:t></w:r>}/cjustify($1)/oge;
+
+$content =~ s{<w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t>(.*?)</w:t></w:r>}/rjustify($1)/oge;
 
 $content =~ s/<.*?>//g;
 
