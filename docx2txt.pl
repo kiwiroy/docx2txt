@@ -50,7 +50,7 @@ my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
 # Check argument(s) sanity.
 #
 
-(@ARGV == 1 || @ARGV == 2) || die "Usage: $ARGV <infile.docx> [outfile.txt]\n";
+(@ARGV == 1 || @ARGV == 2) || die "Usage: $0 <infile.docx> [outfile.txt]\n";
 
 stat($ARGV[0]);
 die "Can't read docx file <$ARGV[0]>!\n" if ! (-f _ && -r _);
