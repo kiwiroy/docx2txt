@@ -19,6 +19,7 @@
 
 #
 # This script extracts text from document.xml contained inside .docx file.
+# Perl v5.8.2 was used for testing this script.
 #
 # Author : Sandeep Kumar (shimple0 -AT- Yahoo .DOT. COM)
 #
@@ -30,6 +31,10 @@
 #                 docx file directly, instead of xml file.
 #    18/08/2008 - Added support for center and right justification of text that
 #                 fits in a line 80 characters wide (adjustable).
+#    03/09/2008 - Fixed the slip in usage message.
+#    12/09/2008 - Slightly changed the script invocation and argument handling
+#                 to incorporate some of the shell script functionality here.
+#                 Added support to handle embedded urls in docx document.
 #
 
 
@@ -50,7 +55,16 @@ my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
 # Check argument(s) sanity.
 #
 
-(@ARGV == 1 || @ARGV == 2) || die "Usage: $0 <infile.docx> [outfile.txt]\n";
+my $usage = <<USAGE;
+
+Usage:	$0 <infile.docx> [outfile.txt|-]
+
+	Use '-' as the outfile name to dump the text on STDOUT.
+	Output is saved in infile.txt if second argument is omitted.
+
+USAGE
+
+die $usage if (@ARGV == 0 || @ARGV > 2);
 
 stat($ARGV[0]);
 die "Can't read docx file <$ARGV[0]>!\n" if ! (-f _ && -r _);
@@ -69,11 +83,25 @@ die "Failed to extract required information from <$ARGV[0]>!\n" if ! $content;
 # Be ready for outputting the extracted text contents.
 #
 
-my $txtfile;
 if (@ARGV == 1) {
-    $txtfile = \*STDOUT;
-} else {
-    open($txtfile, "> $ARGV[1]") || die "Can't create <$ARGV[1]> for output!\n";
+     $ARGV[1] = $ARGV[0];
+     $ARGV[1] .= ".txt" if !($ARGV[1] =~ s/\.docx$/\.txt/);
+}
+
+my $txtfile;
+open($txtfile, "> $ARGV[1]") || die "Can't create <$ARGV[1]> for output!\n";
+
+
+#
+# Gather information about header, footer, hyperlinks, images, footnotes etc.
+#
+
+$_ = `$unzip -p '$ARGV[0]' word/_rels/document.xml.rels 2>/dev/null`;
+
+my %docurels;
+while (/<Relationship Id="(.*?)" Type=".*?\/([^\/]*?)" Target="(.*?)"( .*?)?\/>/g)
+{
+    $docurels{"$2:$1"} = $3;
 }
 
 
@@ -82,24 +110,32 @@ if (@ARGV == 1) {
 #
 
 sub cjustify {
-	my $len = length $_[0];
+    my $len = length $_[0];
 
-	if ($len < ($lwidth - 1)) {
-		my $lsp = ($lwidth - $len) / 2;
-		return ' ' x $lsp . $_[0];
-	} else {
-		return $_[0];
-	}
+    if ($len < ($lwidth - 1)) {
+        my $lsp = ($lwidth - $len) / 2;
+        return ' ' x $lsp . $_[0];
+    } else {
+        return $_[0];
+    }
 }
 
 sub rjustify {
-	my $len = length $_[0];
+    my $len = length $_[0];
 
-	if ($len < $lwidth) {
-		return ' ' x ($lwidth - $len) . $_[0];
-	} else {
-		return $_[0];
-	}
+    if ($len < $lwidth) {
+        return ' ' x ($lwidth - $len) . $_[0];
+    } else {
+        return $_[0];
+    }
+}
+
+#
+# Subroutines for dealing with embedded links and images
+#
+
+sub hyperlink {
+    return "{$_[1]}[HYPERLINK: $docurels{\"hyperlink:$_[0]\"}]";
 }
 
 
@@ -131,6 +167,8 @@ $content =~ s{<w:caps/>.*?(<w:t>|<w:t [^>]+>)(.*?)</w:t>}/uc $2/oge;
 $content =~ s{<w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t>(.*?)</w:t></w:r>}/cjustify($1)/oge;
 
 $content =~ s{<w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t>(.*?)</w:t></w:r>}/rjustify($1)/oge;
+
+$content =~ s{<w:hyperlink r:id="(.*?)".*?>(.*?)</w:hyperlink>}/hyperlink($1,$2)/oge;
 
 $content =~ s/<.*?>//g;
 
