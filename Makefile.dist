@@ -1,0 +1,17 @@
+#
+# Internal Makefile for generating docx2txt distribution package
+#
+
+NAME = docx2txt
+VERSION = 0.2
+PKG=$(NAME)-$(VERSION)
+
+PKGFILES = $(NAME).sh $(NAME).pl BSDmakefile Makefile INSTALL README COPYING \
+	ChangeLog ToDo AUTHORS
+
+dist:
+	ln -s . $(PKG)
+	tar zcvf $(PKG).tgz $(addprefix $(PKG)/, $(PKGFILES));
+	rm $(PKG)
+
+.PHONY: dist

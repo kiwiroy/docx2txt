@@ -2,23 +2,14 @@
 # BSD makefile for docx2txt
 #
 
-NAME = docx2txt
-VERSION = 0.2
 INSTALLDIR = /usr/local/bin
 CP = /bin/cp
 CHMOD = /bin/chmod
 
-Dx2TFILES = $(NAME).sh $(NAME).pl
-PKGFILES = $(Dx2TFILES) Makefile INSTALL README COPYING ChangeLog ToDo AUTHORS
-PKG=$(NAME)-$(VERSION)
+Dx2TFILES = docx2txt.sh docx2txt.pl
 
 install: $(Dx2TFILES)
 	$(CP) $> $(INSTALLDIR)
 	(cd $(INSTALLDIR) && $(CHMOD) 755 $>)
 
-dist:
-	ln -s . $(PKG)
-	tar zcvf $(PKG).tgz $(addprefix $(PKG)/, $(PKGFILES)); \
-	rm $(PKG)
-
-.PHONY: install dist
+.PHONY: install
