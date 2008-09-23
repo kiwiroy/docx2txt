@@ -1,7 +1,84 @@
-1. Adjust various executables and installation directory paths for your system.
-   - #! paths for bash and perl in docx2txt.sh and docx2txt.pl
-   - path for unzip in docx2txt.pl
-   - install directory, and paths for cp and chmod in Makefile
+You will need make and install utilities installed on your system for
+installation via makefile.
 
-2. Run 'make install' as root.
+Adjust various executables paths before proceeding for installation.
+- #! path for env in docx2txt.sh and docx2txt.pl
+- path for unzip in docx2txt.pl
+
+
+Linux, Cygwin, BSD and similar systems
+--------------------------------------
+
+Type "make" as root to install docx2txt scripts for all users in /usr/local/bin.
+If you want to install these in some other directory, you can do so via
+
+make INSTALLDIR=/path/to/desired/directory
+
+BSD users can use either GNU make or BSD make.
+
+
+Windows
+-------
+
+You can install Cygwin from http://www.cygwin.com/ and follow the instructions
+given in the corresponding section above.
+
+If you do not want to install cygwin, you can give following a try and give
+your feedback about it.
+
+a. Get following files (earlier available in /usr/bin/ of cygwin installation)
+   and place them in, say C:\docx2txt .
+
+   cygwin1.dll
+   perl.exe
+   cygperl*.dll
+   unzip.exe
+   cygcrypt*.dll
+
+   If you find something more was needed, please inform me so that I can update
+   this documentation.
+
+b. Copy docx2txt.pl also to C:\docx2txt .
+
+c. Change path for unzip in docx2txt.pl to C:/docx2txt/unzip.exe .
+
+d. You should now be able to invoke docx2txt.pl from within C:\docx2txt as
+   follows.
+
+   perl docx2txt.pl file.docx
+   perl docx2txt.pl directory\file.docx -
+   perl docx2txt.pl directory/file.docx file.txt
+   perl docx2txt.pl C:/somedir/file.docx
+   perl docx2txt.pl C:\somedir\file.docx C:\otherdir\converted.txt
+
+In case you have some perl and commandline unzip utility installed on your
+windows system and want help in using docx2txt.pl script there, please feel
+free to contact me via project page [http://sourceforge.net/projects/docx2txt].
+Remote access to your system will be required in this case.
+
+
+Manual Installation
+-------------------
+
+1. Copy docx2txt.pl and docx2txt.sh to the desired directory.
+
+   cp docx2txt.pl docx2txt.sh /path/to/desired/directory
+
+2. Change the permission of copied files to 755.
+
+   chmod 755 /path/to/desired/directory/docx2txt.*
+
+3. Add the concerned directory to your PATH, if not already in PATH.
+
+   PATH=$PATH:/path/to/desired/directory
+
+
+Important Notes
+---------------
+
+1. You need to have perl installed on your system for using this tool.
+
+2. You can skip installing docx2txt.sh if you want to. This Bash script wrapper
+   internally invokes the perl script. It also checks for overwriting the output
+   text file apart from usage difference [check README for details].
 

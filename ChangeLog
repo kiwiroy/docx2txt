@@ -1,3 +1,26 @@
+v0.3 : 23/09/2008
+
+New features:
+- center and right justification of text fitting in a line of (adjustible) 80
+  columns.
+- indicating hyperlinked text along with the hyperlink.
+- BSD makefile [Thanks to "Rene Maroufi" (info>AT<maroufi>DOT<net) for giving
+  guest access on an OpenBSD host for it].
+
+Please refer to the release documentation for details.
+- docx2txt.pl invocation has been changed a little,
+- user involvement during installation is reduced.
+- some suggestions on how Windows users can use this tool.
+
+
+v0.2 : 15/08/2008
+
+Docx text extraction can now be done in two ways (check version README for
+further details).
+- docx2txt.sh file.docx
+- docx2txt.pl infile.docx outfile.txt 
+
+
 v0.1 : 10/08/2008
 
 Initial Sourceforge release with attempts to handle following features during
@@ -10,12 +33,3 @@ text extraction.
   MSOffice it comes as all caps.
 - character conversions (" ' < & > - ... etc.). Euro character is converted to
   E, however you can change this behaviour by comment-uncomment in perl script.
-
-
-v0.2 : 15/08/2008
-
-Docx text extraction can now be done in two ways (check version README for
-further details).
-- docx2txt.sh file.docx
-- docx2txt.pl infile.docx outfile.txt 
-
