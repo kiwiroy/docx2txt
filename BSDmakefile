@@ -2,14 +2,13 @@
 # BSD makefile for docx2txt
 #
 
-INSTALLDIR = /usr/local/bin
-CP = /bin/cp
-CHMOD = /bin/chmod
+INSTALLDIR ?= /usr/local/bin
+INSTALL != which install
 
 Dx2TFILES = docx2txt.sh docx2txt.pl
 
 install: $(Dx2TFILES)
-	$(CP) $> $(INSTALLDIR)
-	(cd $(INSTALLDIR) && $(CHMOD) 755 $>)
+	[ -d $(INSTALLDIR) ] || mkdir -p $(INSTALLDIR)
+	$(INSTALL) -m 755 $> $(INSTALLDIR)
 
 .PHONY: install
