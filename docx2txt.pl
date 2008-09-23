@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # docx2txt, a command-line utility to convert Docx documents to text format.
 # Copyright (C) 2008 Sandeep Kumar
@@ -35,6 +35,9 @@
 #    12/09/2008 - Slightly changed the script invocation and argument handling
 #                 to incorporate some of the shell script functionality here.
 #                 Added support to handle embedded urls in docx document.
+#    23/09/2008 - Changed #! line to use /usr/bin/env - good suggestion from
+#                 Rene Maroufi (info>AT<maroufi>DOT<net) to reduce user work
+#                 during installation.
 #
 
 

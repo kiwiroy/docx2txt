@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # docx2txt, a command-line utility to convert Docx documents to text format.
 # Copyright (C) 2008 Sandeep Kumar
@@ -31,6 +31,9 @@
 #    15/08/2008 - Invoking docx2txt.pl with docx document instead of xml file,
 #                 so don't need unzip and rm actions now.
 #                 Removed dependency on sed for generating output filename.
+#    23/09/2008 - Changed #! line to use /usr/bin/env - good suggestion from
+#                 Rene Maroufi (info>AT<maroufi>DOT<net) to reduce user work
+#                 during installation.
 #
 
 
