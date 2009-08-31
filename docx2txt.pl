@@ -38,6 +38,7 @@
 #    23/09/2008 - Changed #! line to use /usr/bin/env - good suggestion from
 #                 Rene Maroufi (info>AT<maroufi>DOT<net) to reduce user work
 #                 during installation.
+#    31/08/2009 - Added support for handling more escape characters.
 #
 
 
@@ -52,6 +53,14 @@ my $lwidth = 80;	# Line width, used for short line justification.
 
 # ToDo: Better list handling. Currently assumed 8 level nesting.
 my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
+
+# Only amp, gt and lt are required for docx escapes, others are used for better
+# text experience.
+my %escChrs = (	amp => '&', gt => '>', lt => '<',
+		acute => '\'', brvbar => '|', copy => '(C)', divide => '/',
+		laquo => '<<', macr => '-', nbsp => ' ', raquo => '>>',
+		reg => '(R)', shy => '-', times => 'x'
+);
 
 
 #
@@ -192,9 +201,16 @@ $content =~ s/\xE2\x80\x93/-/og;
 
 $content =~ s/\xC2\xA0//og;
 
-$content =~ s/&amp;/&/ogi;
-$content =~ s/&lt;/</ogi;
-$content =~ s/&gt;/>/ogi;
+#
+# Convert docx specific escape chars first.
+#
+$content =~ s/(&)(amp|gt|lt)(;)/$escChrs{lc $2}/ig;
+
+#
+# Another pass for a better text experience, after sequences like "&amp;laquo;"
+# are converted to "&laquo;".
+#
+$content =~ s/(&)([a-zA-Z]+)(;)/($escChrs{lc $2} ? $escChrs{lc $2} : '&'.$2.';')/ge;
 
 
 #
