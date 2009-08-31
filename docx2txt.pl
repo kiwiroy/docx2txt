@@ -39,6 +39,8 @@
 #                 Rene Maroufi (info>AT<maroufi>DOT<net) to reduce user work
 #                 during installation.
 #    31/08/2009 - Added support for handling more escape characters.
+#                 Using OS specific null device to redirect stderr.
+#                 Saving text file in binary mode.
 #
 
 
@@ -46,13 +48,14 @@
 # Adjust the settings here.
 #
 
-my $unzip = "/usr/bin/unzip";
+my $unzip = "/usr/bin/unzip";  # Windows path like "C:\\path\\to\\unzip.exe"
 my $nl = "\n";		# Alternative is "\r\n".
 my $lindent = "  ";	# Indent nested lists by "\t", " " etc.
 my $lwidth = 80;	# Line width, used for short line justification.
 
 # ToDo: Better list handling. Currently assumed 8 level nesting.
 my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
+
 
 # Only amp, gt and lt are required for docx escapes, others are used for better
 # text experience.
@@ -87,7 +90,13 @@ die "<$ARGV[0]> does not seem to be docx file!\n" if -T _;
 # Extract needed data from argument docx file.
 #
 
-my $content = `$unzip -p '$ARGV[0]' word/document.xml 2>/dev/null`;
+if ($ENV{OS} =~ /^Windows/) {
+    $nulldevice = "nul";
+} else {
+    $nulldevice = "/dev/null";
+}
+
+my $content = `$unzip -p '$ARGV[0]' word/document.xml 2>$nulldevice`;
 die "Failed to extract required information from <$ARGV[0]>!\n" if ! $content;
 
 
@@ -108,7 +117,7 @@ open($txtfile, "> $ARGV[1]") || die "Can't create <$ARGV[1]> for output!\n";
 # Gather information about header, footer, hyperlinks, images, footnotes etc.
 #
 
-$_ = `$unzip -p '$ARGV[0]' word/_rels/document.xml.rels 2>/dev/null`;
+$_ = `$unzip -p '$ARGV[0]' word/_rels/document.xml.rels 2>$nulldevice`;
 
 my %docurels;
 while (/<Relationship Id="(.*?)" Type=".*?\/([^\/]*?)" Target="(.*?)"( .*?)?\/>/g)
@@ -217,6 +226,7 @@ $content =~ s/(&)([a-zA-Z]+)(;)/($escChrs{lc $2} ? $escChrs{lc $2} : '&'.$2.';')
 # Write the extracted and converted text contents to output.
 #
 
+binmode $txtfile;    # Ensure no auto-conversion of '\n' to '\r\n' on Windows.
 print $txtfile $content;
 close $txtfile;
 
