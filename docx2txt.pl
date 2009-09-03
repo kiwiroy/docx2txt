@@ -41,6 +41,11 @@
 #    31/08/2009 - Added support for handling more escape characters.
 #                 Using OS specific null device to redirect stderr.
 #                 Saving text file in binary mode.
+#    03/09/2009 - Updations based on feedback/suggestions from Sergei Kulakov
+#                 (sergei>AT<dewia>DOT<com).
+#                 - removal of non-document text in between TOC related tags.
+#                 - display of hyperlink alongside linked text user controlled.
+#                 - some character conversion updates
 #
 
 
@@ -52,6 +57,7 @@ my $unzip = "/usr/bin/unzip";  # Windows path like "C:\\path\\to\\unzip.exe"
 my $nl = "\n";		# Alternative is "\r\n".
 my $lindent = "  ";	# Indent nested lists by "\t", " " etc.
 my $lwidth = 80;	# Line width, used for short line justification.
+my $showHyperLink = "N"; # Show hyperlink alongside linked text.
 
 # ToDo: Better list handling. Currently assumed 8 level nesting.
 my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
@@ -156,7 +162,7 @@ sub rjustify {
 #
 
 sub hyperlink {
-    return "{$_[1]}[HYPERLINK: $docurels{\"hyperlink:$_[0]\"}]";
+    return $_[1] . (lc $showHyperLink eq "y" ? " [HYPERLINK: $docurels{\"hyperlink:$_[0]\"}]" : "");
 }
 
 
@@ -191,6 +197,11 @@ $content =~ s{<w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t>(.*?)</w:t></w:r>}/r
 
 $content =~ s{<w:hyperlink r:id="(.*?)".*?>(.*?)</w:hyperlink>}/hyperlink($1,$2)/oge;
 
+# Remove stuff between TOC related tags.
+if ($content =~ m|<w:pStyle w:val="TOCHeading"/>|) {
+    $content =~ s|<w:instrText[^>]*>.*?</w:instrText>||og;
+}
+
 $content =~ s/<.*?>//g;
 
 
@@ -198,17 +209,18 @@ $content =~ s/<.*?>//g;
 # Convert non-ASCII characters/character sequences to ASCII characters.
 #
 
-# $content =~ s/\xE2\x82\xAC/\xC8/og;	# euro symbol as saved by MSOffice
 $content =~ s/\xE2\x82\xAC/E/og;	# euro symbol expressed as E
 
-$content =~ s/\xE2\x80\xA6/.../og;
-$content =~ s/\xE2\x80\xA2/::/og;	# four dot diamond symbol
-$content =~ s/\xE2\x80\x9C/"/og;
-$content =~ s/\xE2\x80\x99/'/og;
-$content =~ s/\xE2\x80\x98/'/og;
 $content =~ s/\xE2\x80\x93/-/og;
+$content =~ s/\xE2\x80\x94/ - /og;
+$content =~ s/\xE2\x80\x98/`/og;
+$content =~ s/\xE2\x80\x99/'/og;
+$content =~ s/\xE2\x80\x9C/"/og;	# left quote
+$content =~ s/\xE2\x80\x9D/"/og;	# right quote
+$content =~ s/\xE2\x80\xA2/::/og;	# four dot diamond symbol
+$content =~ s/\xE2\x80\xA6/.../og;
 
-$content =~ s/\xC2\xA0//og;
+$content =~ s/\xC2\xA0/ /og;		# nbsp
 
 #
 # Convert docx specific escape chars first.
