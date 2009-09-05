@@ -1,3 +1,16 @@
+v0.4 : 06/09/2009
+
+New features: [suggestions from "Sergei Kulakov (sergei>AT<dewia>DOT<com)"].
+- user can control display of hyperlink along with linked text.
+- TOC related cleanup. TOC was not addressed so far.
+
+Updations:
+- many new character conversions (check the script code for details).
+- character conversion mappings are now organised in a tabular form.
+- currency characters are converted to respective full currency name.
+- code tweaks to speedup the conversion process.
+
+
 v0.3 : 23/09/2008
 
 New features:

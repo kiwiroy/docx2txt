@@ -4,3 +4,12 @@
 4. Explore what can be done to make installation less involving for the user.
 5. XML parsing??? and making things more efficient. When it has matured enough,
    may be a C/C++ version should be looked into.
+6. Number of configuration variables are increasing. High time to have a
+   configuration file so that user doesn't have to edit the script to adjust
+   these settings.
+7. Extract images. Now there has been a user request as well.
+8. Improve table and short line justification handling. Ideally table columns
+   in a single row should be separated by pipe. Short line justification needs
+   to be adjusted to situations when tab occurs in line. A quick look into these
+   issues suggests that logic/code will need to be reorganised to handle these.
+9. Implement simple state-machine for speedup [partially worked towards it].

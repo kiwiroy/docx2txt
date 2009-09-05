@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # docx2txt, a command-line utility to convert Docx documents to text format.
-# Copyright (C) 2008 Sandeep Kumar
+# Copyright (C) 2008-2009 Sandeep Kumar
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

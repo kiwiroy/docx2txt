@@ -42,21 +42,21 @@ You can do the text conversion in two ways.
 Tune your Experience
 --------------------
 
-You can adjust
+You can configure
 - newline (Unix/Dos way),
 - line width (used for short line justification)
-- list level indentation amount, and
-- list element indicator characters for different levels
+- list level indentation amount
+- list element indicator characters for different levels, and
+- showing of hyperlink along with linked text
 in docx2txt.pl to suit your formatting taste.
 
 Currently 8 level list nesting is assumed, however if you want to deal with
 deeper nesting, you can adjust that as well in the perl script, by following
 the comments in the perl script.
 
-As of now, hyperlinked text along with the corresponding URL is presented in
-the generated text file as
+Currently, hyperlinked text along with the corresponding URL, is presented as
 
-{hyperlinked text}[URL]
+hyperlinked text [HYPERLINK: hyperlink url]
 
 Your feedback is awaited on this.
 
