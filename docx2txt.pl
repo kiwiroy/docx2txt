@@ -51,6 +51,9 @@
 #                 Organised conversion mappings in tabular form for speedup and
 #                 easy maintenance.
 #                 Tweaked code to reduce number of passes over document content.
+#    10/09/2009 - For leaner text experience, hyperlink is not displayed if
+#                 hyperlink and hyperlinked text are same, even if user has
+#                 enabled hyperlink display.
 #
 
 
@@ -204,8 +207,21 @@ sub justify {
 #
 
 sub hyperlink {
-    return $_[1] . (lc $showHyperLink eq "y" ? " [HYPERLINK: $docurels{\"hyperlink:$_[0]\"}]" : "");
+    my $hlrid = $_[0];
+    my $hltext = $_[1];
+    my $hlink = $docurels{"hyperlink:$hlrid"};
+
+    $hltext =~ s/<[^>]*?>//og;
+    $hltext .= " [HYPERLINK: $hlink]" if ($showHyperLink eq "y" && $hltext ne $hlink);
+
+    return $hltext;
 }
+
+
+#
+# Force configuration value to lowercase as expected by script.
+#
+$showHyperLink = lc $showHyperLink;
 
 
 #
