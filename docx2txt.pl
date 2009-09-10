@@ -54,6 +54,8 @@
 #    10/09/2009 - For leaner text experience, hyperlink is not displayed if
 #                 hyperlink and hyperlinked text are same, even if user has
 #                 enabled hyperlink display.
+#                 Improved handling of short line justification. Many
+#                 justification tag patterns were not captured earlier.
 #
 
 
@@ -217,6 +219,20 @@ sub hyperlink {
     return $hltext;
 }
 
+#
+# Subroutines for processing paragraph content.
+#
+
+sub processParagraph {
+    my $para = $_[0] . "$nl";
+    my $align = $1 if ($_[0] =~ /<w:jc w:val="([^"]*?)"\/>/);
+
+    $para =~ s/<.*?>//og;
+    return justify($align,$para) if $align;
+
+    return $para;
+}
+
 
 #
 # Force configuration value to lowercase as expected by script.
@@ -232,7 +248,10 @@ my %tag2chr = (tab => "\t", noBreakHyphen => "-", softHyphen => " - ");
 
 $content =~ s/<?xml .*?\?>(\r)?\n//;
 
-$content =~ s{<w:p [^/>]+?/>|</w:p>|<w:br/>}|$nl|og;
+# Remove stuff between TOC related tags.
+if ($content =~ m|<w:pStyle w:val="TOCHeading"/>|) {
+    $content =~ s|<w:instrText[^>]*>.*?</w:instrText>||og;
+}
 
 $content =~ s{<w:(tab|noBreakHyphen|softHyphen)/>}|$tag2chr{$1}|og;
 
@@ -251,15 +270,11 @@ $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$lindent x $1 . "$levchar[$1] 
 
 $content =~ s{<w:caps/>.*?(<w:t>|<w:t [^>]+>)(.*?)</w:t>}/uc $2/oge;
 
-$content =~ s{<w:pPr><w:jc w:val="([^"]*?)"/></w:pPr><w:r><w:t>(.*?)</w:t></w:r>}/justify($1,$2)/oge;
-
 $content =~ s{<w:hyperlink r:id="(.*?)".*?>(.*?)</w:hyperlink>}/hyperlink($1,$2)/oge;
 
-# Remove stuff between TOC related tags.
-if ($content =~ m|<w:pStyle w:val="TOCHeading"/>|) {
-    $content =~ s|<w:instrText[^>]*>.*?</w:instrText>||og;
-}
+$content =~ s/<w:p [^>]+?>(.*?)<\/w:p>/processParagraph($1)/oge;
 
+$content =~ s{<w:p [^/>]+?/>|</w:p>|<w:br/>}|$nl|og;
 $content =~ s/<.*?>//og;
 
 
