@@ -56,6 +56,8 @@
 #                 enabled hyperlink display.
 #                 Improved handling of short line justification. Many
 #                 justification tag patterns were not captured earlier.
+#    11/09/2009 - A directory holding the unzipped content of .docx file can
+#                 also be specified as argument to the script, in place of file.
 #
 
 
@@ -139,17 +141,55 @@ Usage:	$0 <infile.docx> [outfile.txt|-]
 	Use '-' as the outfile name to dump the text on STDOUT.
 	Output is saved in infile.txt if second argument is omitted.
 
+	infile.docx can also be a directory name holding the unzipped content
+	of concerned .docx file.
+
 USAGE
 
 die $usage if (@ARGV == 0 || @ARGV > 2);
 
-stat($ARGV[0]);
-die "Can't read docx file <$ARGV[0]>!\n" if ! (-f _ && -r _);
-die "<$ARGV[0]> does not seem to be docx file!\n" if -T _;
+
+#
+# Check for existence and readability of required file in specified directory,
+# and whether it is a text file.
+#
+
+sub check_for_required_file_in_folder {
+    stat("$_[1]/$_[0]");
+    die "Can't read <$_[0]> in <$_[1]>!\n" if ! (-f _ && -r _);
+    die "<$_[1]/$_[0]> does not seem to be a text file!\n" if ! -T _;
+}
+
+sub readFileInto
+{
+  local $/ = undef;
+  open my $fh, "$_[0]" or die "Couldn't read file <$_[0]>!\n";
+  binmode $fh;
+  $_[1] = <$fh>;
+  close $fh;
+}
 
 
 #
-# Extract needed data from argument docx file.
+# Check whether first argument is specifying a directory holding extracted
+# content of .docx file, or .docx file itself.
+#
+
+stat($ARGV[0]);
+
+if (-d _) {
+    check_for_required_file_in_folder("word/document.xml", $ARGV[0]);
+    check_for_required_file_in_folder("word/_rels/document.xml.rels", $ARGV[0]);
+    $inpIsDir = 'y';
+}
+else {
+    die "Can't read docx file <$ARGV[0]>!\n" if ! (-f _ && -r _);
+    die "<$ARGV[0]> does not seem to be docx file!\n" if -T _;
+}
+
+
+#
+# Extract xml document content from argument docx file/directory.
 #
 
 if ($ENV{OS} =~ /^Windows/) {
@@ -158,7 +198,12 @@ if ($ENV{OS} =~ /^Windows/) {
     $nulldevice = "/dev/null";
 }
 
-my $content = `$unzip -p '$ARGV[0]' word/document.xml 2>$nulldevice`;
+if ($inpIsDir eq 'y') {
+    readFileInto("$ARGV[0]/word/document.xml", $content);
+} else {
+    $content = `$unzip -p '$ARGV[0]' word/document.xml 2>$nulldevice`;
+}
+
 die "Failed to extract required information from <$ARGV[0]>!\n" if ! $content;
 
 
@@ -173,13 +218,18 @@ if (@ARGV == 1) {
 
 my $txtfile;
 open($txtfile, "> $ARGV[1]") || die "Can't create <$ARGV[1]> for output!\n";
+binmode $txtfile;    # Ensure no auto-conversion of '\n' to '\r\n' on Windows.
 
 
 #
 # Gather information about header, footer, hyperlinks, images, footnotes etc.
 #
 
-$_ = `$unzip -p '$ARGV[0]' word/_rels/document.xml.rels 2>$nulldevice`;
+if ($inpIsDir eq 'y') {
+    readFileInto("$ARGV[0]/word/_rels/document.xml.rels", $_);
+} else {
+    $_ = `$unzip -p '$ARGV[0]' word/_rels/document.xml.rels 2>$nulldevice`;
+}
 
 my %docurels;
 while (/<Relationship Id="(.*?)" Type=".*?\/([^\/]*?)" Target="(.*?)"( .*?)?\/>/g)
@@ -300,7 +350,6 @@ $content =~ s/((&)([a-z]+)(;))/($escChrs{lc $3} ? $escChrs{lc $3} : $1)/ioge;
 # Write the extracted and converted text contents to output.
 #
 
-binmode $txtfile;    # Ensure no auto-conversion of '\n' to '\r\n' on Windows.
 print $txtfile $content;
 close $txtfile;
 
