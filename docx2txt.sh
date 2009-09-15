@@ -34,6 +34,10 @@
 #    23/09/2008 - Changed #! line to use /usr/bin/env - good suggestion from
 #                 Rene Maroufi (info>AT<maroufi>DOT<net) to reduce user work
 #                 during installation.
+#    15/09/2009 - Added support for directory (holding unzipped content of
+#                 .docx file) argument to keep it's usage in sync with main
+#                 docx2txt.pl script.
+#                 Fixed bug in condition check for input file accessibility.
 #
 
 
@@ -41,15 +45,36 @@ MYLOC=`dirname "$0"`	# invoked perl script docx2txt.pl is expected here.
 
 function usage ()
 {
-    echo -e "\nUsage : $0 <file.docx>\n"
+    cat << _USAGE_
+
+Usage : $0 <file.docx>
+
+	<file.docx> can also specify a directory holding the unzipped
+	content of a .docx file.
+
+_USAGE_
+
     exit 1
 }
 
 [ $# != 1 ] && usage
 
-if ! [ -f "$1" -o -r "$1" ]
+#
+# Remove trailing '/'s if any, when input specifies a directory.
+#
+shopt -s extglob
+set ${1%%+(/)}
+
+if [ -d "$1" ]
 then
-    echo -e "\nCan't read input file <$1>!"
+    if ! [ -r "$1" -a -x "$1" ]
+    then
+        echo -e "\nCan't access/read input directory <$1>!\n"
+        exit 1
+    fi
+elif ! [ -f "$1" -a -r "$1" -a -s "$1" ]
+then
+    echo -e "\nCheck if <$1> exists, is readable and has non-zero size!\n"
     exit 1
 fi
 
@@ -86,8 +111,8 @@ check_for_existence "$TEXTFILE" "Output text file"
 "$MYLOC/docx2txt.pl" "$1" "$TEXTFILE"
 if [ $? == 0 ]
 then
-    echo "Text extracted from <$1> is available in <$TEXTFILE>."
+    echo -e "\nText extracted from <$1> is available in <$TEXTFILE>.\n"
 else
-    echo "Failed to extract text from <$1>!"
+    echo -e "\nFailed to extract text from <$1>!\n"
 fi
 
