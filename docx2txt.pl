@@ -58,6 +58,9 @@
 #                 justification tag patterns were not captured earlier.
 #    11/09/2009 - A directory holding the unzipped content of .docx file can
 #                 also be specified as argument to the script, in place of file.
+#    17/09/2009 - Removed trailing slashes from input directory name.
+#                 Updated unzip command invocations to handle path names
+#                 containing spaces.
 #
 
 
@@ -201,7 +204,7 @@ if ($ENV{OS} =~ /^Windows/) {
 if ($inpIsDir eq 'y') {
     readFileInto("$ARGV[0]/word/document.xml", $content);
 } else {
-    $content = `$unzip -p '$ARGV[0]' word/document.xml 2>$nulldevice`;
+    $content = `"$unzip" -p "$ARGV[0]" word/document.xml 2>$nulldevice`;
 }
 
 die "Failed to extract required information from <$ARGV[0]>!\n" if ! $content;
@@ -213,6 +216,11 @@ die "Failed to extract required information from <$ARGV[0]>!\n" if ! $content;
 
 if (@ARGV == 1) {
      $ARGV[1] = $ARGV[0];
+
+     # Remove any trailing slashes to generate proper output filename, when
+     # input is directory.
+     $ARGV[1] =~ s%[/\\]+$%% if ($inpIsDir eq 'y');
+
      $ARGV[1] .= ".txt" if !($ARGV[1] =~ s/\.docx$/\.txt/);
 }
 
@@ -228,7 +236,7 @@ binmode $txtfile;    # Ensure no auto-conversion of '\n' to '\r\n' on Windows.
 if ($inpIsDir eq 'y') {
     readFileInto("$ARGV[0]/word/_rels/document.xml.rels", $_);
 } else {
-    $_ = `$unzip -p '$ARGV[0]' word/_rels/document.xml.rels 2>$nulldevice`;
+    $_ = `"$unzip" -p "$ARGV[0]" word/_rels/document.xml.rels 2>$nulldevice`;
 }
 
 my %docurels;
