@@ -28,17 +28,18 @@
 ::
 ::    17/09/2009 - Initial version of this file. It has similar functionality
 ::                 as corresponding unix shell script.
+::    21/09/2009 - Updations to deal with paths containing spacess.
 ::
 
 
 ::
-:: Set paths to perl binary and docx2txt.pl script.
+:: Set paths (without surrounding quotes) to perl binary and docx2txt.pl script.
 ::
 
 set PERL=C:\Program Files\strawberry-perl-5.10.0.6\perl\bin\perl.exe
 :: set PERL=C:\Cygwin\bin\perl.exe
 
-set DOCX2TXT_PL="docx2txt.pl"
+set DOCX2TXT_PL=docx2txt.pl
 
 ::
 :: If CAKECMD variable is set, batch file will unzip the content of argument
@@ -52,15 +53,15 @@ set DOCX2TXT_PL="docx2txt.pl"
 ::
 :: Check if this batch file is invoked correctly.
 ::
-if "%1" == "" goto USAGE
-if not "%2" == "" goto USAGE
+if "%~1" == "" goto USAGE
+if not "%~2" == "" goto USAGE
 goto CHECK_ARG
 
 
 :USAGE
 
 echo.
-echo Usage : "%0" file.docx
+echo Usage : "%~0" file.docx
 echo.
 echo 	"file.docx" can also specify a directory holding the unzipped
 echo 	content of a .docx file.
@@ -74,13 +75,13 @@ goto END
 
 :CHECK_ARG
 
-set INPARG=%1
+set INPARG=%~1
 
-if exist %1\nul (
+if exist %~s1\nul (
     goto INP_IS_DIR
-) else if not exist %1 (
+) else if not exist "%~1" (
     echo.
-    echo Argument file/directory "%1" does not exist.
+    echo Argument file/directory "%~1" does not exist.
     echo.
     goto END
 )
@@ -120,15 +121,15 @@ set TXTFILE=%INPARG:~0,-5%.txt
 
 :CHECK_FOR_OVERWRITING
 
-if not exist %TXTFILE% goto NO_UNZIP
+if not exist "%TXTFILE%" goto NO_UNZIP
 
 echo.
-echo Output file %TXTFILE% already exists.
-set /P confirm=Overwrite %TXTFILE% [Y/N] ?
+echo Output file "%TXTFILE%" already exists.
+set /P confirm=Overwrite "%TXTFILE%" [Y/N] ?
 
 if /I "%confirm%" == "N" (
     echo.
-    echo Please copy %TXTFILE% somewhere else and rerun this batch file.
+    echo Please copy "%TXTFILE%" somewhere else and rerun this batch file.
     echo.
     goto END
 )
@@ -143,12 +144,11 @@ if /I "%confirm%" == "N" (
 
 :NO_UNZIP
 
-if exist %1\nul goto CONVERT
+if exist %~s1\nul goto CONVERT
 
 if not defined CAKECMD goto CONVERT
-echo here
-rename %1 %1.zip
-echo y | "%CAKECMD%" extract "%1.zip" \ "%1" > nul
+rename "%~1" "%~1.zip"
+echo y | "%CAKECMD%" extract "%~1.zip" \ "%~1" > nul
 set RENAMEBACK=yes
 
 
@@ -162,11 +162,11 @@ set RENAMEBACK=yes
 
 if %ERRORLEVEL% == 2 (
     echo.
-    echo Failed to extract text from %1!
+    echo Failed to extract text from "%~1"!
     echo.
 ) else if %ERRORLEVEL% == 0 (
     echo.
-    echo Text extracted from "%1" is available in "%TXTFILE%".
+    echo Text extracted from "%~1" is available in "%TXTFILE%".
     echo.
 )
 
@@ -174,8 +174,8 @@ if %ERRORLEVEL% == 2 (
 :END
 
 if defined RENAMEBACK (
-    rmdir /S /Q %1
-    rename %1.zip %1
+    rmdir /S /Q "%~1"
+    rename "%~1.zip" "%~1"
 )
 
 set PERL=
