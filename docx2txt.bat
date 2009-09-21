@@ -29,6 +29,8 @@
 ::    17/09/2009 - Initial version of this file. It has similar functionality
 ::                 as corresponding unix shell script.
 ::    21/09/2009 - Updations to deal with paths containing spacess.
+::    22/09/2009 - Code reorganization, mainly around delayedexpansion command
+::                 extension.
 ::
 
 
@@ -48,6 +50,14 @@ set DOCX2TXT_PL=docx2txt.pl
 ::
 
 :: set CAKECMD=C:\Program Files\cake\CakeCmd.exe
+
+
+::
+:: Ensure that required command extensions are enabled.
+::
+
+setlocal enableextensions
+setlocal enabledelayedexpansion
 
 
 ::
@@ -78,6 +88,12 @@ goto END
 set INPARG=%~1
 
 if exist %~s1\nul (
+    set ARGISDIR=y
+    :: Remove any trailing '\'s from input directory name.
+:INP_IS_DIR
+    set LastChar=%INPARG:~-1%
+    if not "!LastChar!" == "\" goto GENERATE_TXTFILE_NAME
+    set INPARG=%INPARG:~0,-1%
     goto INP_IS_DIR
 ) else if not exist "%~1" (
     echo.
@@ -86,32 +102,19 @@ if exist %~s1\nul (
     goto END
 )
 
-goto GENERATE_TXTFILE_NAME
-
 
 ::
-:: Remove any trailing '\'s from input directory name.
+:: Generate output textfile name from input argument.
 ::
-
-:INP_IS_DIR
-
-set LastChar=%INPARG:~-1%
-if not "%LastChar%" == "\" goto GENERATE_TXTFILE_NAME
-set INPARG=%INPARG:~0,-1%
-goto INP_IS_DIR
-
 
 :GENERATE_TXTFILE_NAME
 
 set FILEEXT=%INPARG:~-5%
-if "%FILEEXT%" == ".docx" goto EXT_IS_DOCX
-set TXTFILE=%INPARG%.txt
-goto CHECK_FOR_OVERWRITING
-
-
-:EXT_IS_DOCX
-
-set TXTFILE=%INPARG:~0,-5%.txt
+if "%FILEEXT%" == ".docx" (
+    set TXTFILE=%INPARG:~0,-5%.txt
+) else (
+    set TXTFILE=%INPARG%.txt
+)
 
 
 ::
@@ -119,19 +122,17 @@ set TXTFILE=%INPARG:~0,-5%.txt
 :: overwrite that.
 ::
 
-:CHECK_FOR_OVERWRITING
-
-if not exist "%TXTFILE%" goto NO_UNZIP
-
-echo.
-echo Output file "%TXTFILE%" already exists.
-set /P confirm=Overwrite "%TXTFILE%" [Y/N] ?
-
-if /I "%confirm%" == "N" (
+if exist "%TXTFILE%" (
     echo.
-    echo Please copy "%TXTFILE%" somewhere else and rerun this batch file.
-    echo.
-    goto END
+    echo Output file "%TXTFILE%" already exists.
+    set /P confirm=Overwrite "%TXTFILE%" [Y/N - Default Y] ?
+
+    if /I "!confirm!" == "N" (
+        echo.
+        echo Please copy "%TXTFILE%" somewhere else and rerun this batch file.
+        echo.
+        goto END
+    )
 )
 
 
@@ -142,14 +143,13 @@ if /I "%confirm%" == "N" (
 :: perl script.
 ::
 
-:NO_UNZIP
+if defined ARGISDIR goto CONVERT
 
-if exist %~s1\nul goto CONVERT
-
-if not defined CAKECMD goto CONVERT
-rename "%~1" "%~1.zip"
-echo y | "%CAKECMD%" extract "%~1.zip" \ "%~1" > nul
-set RENAMEBACK=yes
+if defined CAKECMD (
+    rename "%~1" "%~1.zip"
+    echo y | "%CAKECMD%" extract "%~1.zip" \ "%~1" > nul
+    set RENAMEBACK=yes
+)
 
 
 ::
@@ -178,6 +178,9 @@ if defined RENAMEBACK (
     rename "%~1.zip" "%~1"
 )
 
+endlocal
+endlocal
+
 set PERL=
 set DOCX2TXT_PL=
 set CAKECMD=
@@ -185,5 +188,6 @@ set CAKECMD=
 set FILEEXT=
 set INPARG=
 set TXTFILE=
+set ARGISDIR=
 set RENAMEBACK=
 set confirm=
