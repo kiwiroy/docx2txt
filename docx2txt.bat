@@ -31,17 +31,16 @@
 ::    21/09/2009 - Updations to deal with paths containing spacess.
 ::    22/09/2009 - Code reorganization, mainly around delayedexpansion command
 ::                 extension.
+::    24/09/2009 - Required docx2txt.pl is expected in same location as this
+::                 batch file.
 ::
 
 
 ::
-:: Set paths (without surrounding quotes) to perl binary and docx2txt.pl script.
+:: Set path (without surrounding quotes) to perl binary.
 ::
 
 set PERL=C:\Program Files\strawberry-perl-5.10.0.6\perl\bin\perl.exe
-:: set PERL=C:\Cygwin\bin\perl.exe
-
-set DOCX2TXT_PL=docx2txt.pl
 
 ::
 :: If CAKECMD variable is set, batch file will unzip the content of argument
@@ -58,6 +57,20 @@ set DOCX2TXT_PL=docx2txt.pl
 
 setlocal enableextensions
 setlocal enabledelayedexpansion
+
+
+::
+:: docx2txt.pl is expected to be in same location as this batch file.
+::
+
+set DOCX2TXT_PL=%~dp0docx2txt.pl
+
+if not exist "%DOCX2TXT_PL%" (
+    echo.
+    echo Can not continue without "%DOCX2TXT_PL%".
+    echo.
+    goto :EOF
+)
 
 
 ::
