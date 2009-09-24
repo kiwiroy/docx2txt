@@ -69,7 +69,7 @@ if not exist "%DOCX2TXT_PL%" (
     echo.
     echo Can not continue without "%DOCX2TXT_PL%".
     echo.
-    goto :EOF
+    goto END
 )
 
 
