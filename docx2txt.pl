@@ -61,18 +61,21 @@
 #    17/09/2009 - Removed trailing slashes from input directory name.
 #                 Updated unzip command invocations to handle path names
 #                 containing spaces.
+#    01/10/2009 - Added support for configuration file.
 #
 
 
 #
-# Adjust the settings here.
+# The default settings below can be overridden via docx2txt.config - searched
+# first in current directory and then in the same location as this script.
 #
 
-my $unzip = "/usr/bin/unzip";  # Windows path like "C:\\path\\to\\unzip.exe"
-my $nl = "\n";		# Alternative is "\r\n".
-my $lindent = "  ";	# Indent nested lists by "\t", " " etc.
-my $lwidth = 80;	# Line width, used for short line justification.
-my $showHyperLink = "N"; # Show hyperlink alongside linked text.
+our $unzip = "/usr/bin/unzip";	# Windows path like "C:\\path\\to\\unzip.exe"
+our $newLine = "\n";		# Alternative is "\r\n".
+our $lineIndent = "  ";		# Indent nested lists by "\t", " " etc.
+our $lineWidth = 80;		# Line width, used for short line justification.
+our $showHyperLink = "N";	# Show hyperlink alongside linked text.
+
 
 # ToDo: Better list handling. Currently assumed 8 level nesting.
 my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
@@ -192,6 +195,25 @@ else {
 
 
 #
+# Get user configuration, if any.
+#
+
+my %config;
+
+if (-f "docx2txt.config") {
+    %config = do 'docx2txt.config';
+} elsif ($0 =~ m%^(.*[/\\])[^/\\]*?$%) {
+    %config = do "$1docx2txt.config" if (-f "$1docx2txt.config");
+}
+
+if (%config) {
+    foreach my $var (keys %config) {
+        $$var = $config{$var};
+    }
+}
+
+
+#
 # Extract xml document content from argument docx file/directory.
 #
 
@@ -253,10 +275,10 @@ while (/<Relationship Id="(.*?)" Type=".*?\/([^\/]*?)" Target="(.*?)"( .*?)?\/>/
 sub justify {
     my $len = length $_[1];
 
-    if ($_[0] eq "center" && $len < ($lwidth - 1)) {
-        return ' ' x (($lwidth - $len) / 2) . $_[1];
-    } elsif ($_[0] eq "right" && $len < $lwidth) {
-        return ' ' x ($lwidth - $len) . $_[1];
+    if ($_[0] eq "center" && $len < ($lineWidth - 1)) {
+        return ' ' x (($lineWidth - $len) / 2) . $_[1];
+    } elsif ($_[0] eq "right" && $len < $lineWidth) {
+        return ' ' x ($lineWidth - $len) . $_[1];
     } else {
         return $_[1];
     }
@@ -282,7 +304,7 @@ sub hyperlink {
 #
 
 sub processParagraph {
-    my $para = $_[0] . "$nl";
+    my $para = $_[0] . "$newLine";
     my $align = $1 if ($_[0] =~ /<w:jc w:val="([^"]*?)"\/>/);
 
     $para =~ s/<.*?>//og;
@@ -313,17 +335,17 @@ if ($content =~ m|<w:pStyle w:val="TOCHeading"/>|) {
 
 $content =~ s{<w:(tab|noBreakHyphen|softHyphen)/>}|$tag2chr{$1}|og;
 
-my $hr = '-' x 78 . $nl;
+my $hr = '-' x $lineWidth . $newLine;
 $content =~ s|<w:pBdr>.*?</w:pBdr>|$hr|og;
 
-$content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$lindent x $1 . "$levchar[$1] "|oge;
+$content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$lineIndent x $1 . "$levchar[$1] "|oge;
 
 #
 # Uncomment either of below two lines and comment above line, if dealing
 # with more than 8 level nested lists.
 #
 
-# $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$lindent x $1 . '* '|oge;
+# $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$lineIndent x $1 . '* '|oge;
 # $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|'*' x ($1+1) . ' '|oge;
 
 $content =~ s{<w:caps/>.*?(<w:t>|<w:t [^>]+>)(.*?)</w:t>}/uc $2/oge;
@@ -332,7 +354,7 @@ $content =~ s{<w:hyperlink r:id="(.*?)".*?>(.*?)</w:hyperlink>}/hyperlink($1,$2)
 
 $content =~ s/<w:p [^>]+?>(.*?)<\/w:p>/processParagraph($1)/oge;
 
-$content =~ s{<w:p [^/>]+?/>|</w:p>|<w:br/>}|$nl|og;
+$content =~ s{<w:p [^/>]+?/>|</w:p>|<w:br/>}|$newLine|og;
 $content =~ s/<.*?>//og;
 
 
