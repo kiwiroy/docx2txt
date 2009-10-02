@@ -14,7 +14,7 @@ ifeq ($(PERL),)
 $(warning "*** Make sure 'perl' is installed and is in your PATH, before running the installed script. ***")
 endif
 
-Dx2TFILES = docx2txt.sh docx2txt.pl
+Dx2TFILES = docx2txt.sh docx2txt.pl docx2txt.config
 
 install: $(Dx2TFILES)
 	[ -d $(INSTALLDIR) ] || mkdir -p $(INSTALLDIR)
