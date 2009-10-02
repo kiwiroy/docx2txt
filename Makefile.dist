@@ -3,11 +3,11 @@
 #
 
 NAME = docx2txt
-VERSION = 0.2
+VERSION = $(shell head -1 VERSION)
 PKG=$(NAME)-$(VERSION)
 
-PKGFILES = $(NAME).sh $(NAME).pl BSDmakefile Makefile INSTALL README COPYING \
-	ChangeLog ToDo AUTHORS
+PKGFILES = $(NAME).{bat,config,pl,sh} BSDmakefile Makefile WInstall.bat \
+	VERSION INSTALL README COPYING ChangeLog ToDo AUTHORS
 
 dist:
 	ln -s . $(PKG)
