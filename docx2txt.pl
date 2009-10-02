@@ -62,6 +62,7 @@
 #                 Updated unzip command invocations to handle path names
 #                 containing spaces.
 #    01/10/2009 - Added support for configuration file.
+#    02/10/2009 - Using single quotes to specify path for unzip command. 
 #
 
 
@@ -70,7 +71,7 @@
 # first in current directory and then in the same location as this script.
 #
 
-our $unzip = "/usr/bin/unzip";	# Windows path like "C:\\path\\to\\unzip.exe"
+our $unzip = '/usr/bin/unzip';	# Windows path like 'C:/path/to/unzip.exe'
 our $newLine = "\n";		# Alternative is "\r\n".
 our $lineIndent = "  ";		# Indent nested lists by "\t", " " etc.
 our $lineWidth = 80;		# Line width, used for short line justification.
