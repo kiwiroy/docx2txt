@@ -63,6 +63,7 @@
 #                 containing spaces.
 #    01/10/2009 - Added support for configuration file.
 #    02/10/2009 - Using single quotes to specify path for unzip command. 
+#    04/10/2009 - Corrected configuration option name lineIndent to listIndent.
 #
 
 
@@ -73,7 +74,7 @@
 
 our $unzip = '/usr/bin/unzip';	# Windows path like 'C:/path/to/unzip.exe'
 our $newLine = "\n";		# Alternative is "\r\n".
-our $lineIndent = "  ";		# Indent nested lists by "\t", " " etc.
+our $listIndent = "  ";		# Indent nested lists by "\t", " " etc.
 our $lineWidth = 80;		# Line width, used for short line justification.
 our $showHyperLink = "N";	# Show hyperlink alongside linked text.
 
@@ -339,14 +340,14 @@ $content =~ s{<w:(tab|noBreakHyphen|softHyphen)/>}|$tag2chr{$1}|og;
 my $hr = '-' x $lineWidth . $newLine;
 $content =~ s|<w:pBdr>.*?</w:pBdr>|$hr|og;
 
-$content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$lineIndent x $1 . "$levchar[$1] "|oge;
+$content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$listIndent x $1 . "$levchar[$1] "|oge;
 
 #
 # Uncomment either of below two lines and comment above line, if dealing
 # with more than 8 level nested lists.
 #
 
-# $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$lineIndent x $1 . '* '|oge;
+# $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$listIndent x $1 . '* '|oge;
 # $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|'*' x ($1+1) . ' '|oge;
 
 $content =~ s{<w:caps/>.*?(<w:t>|<w:t [^>]+>)(.*?)</w:t>}/uc $2/oge;
