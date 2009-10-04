@@ -1,3 +1,22 @@
+v1.0 : 04/10/2009
+
+New features:
+- Input argument can also be a directory holding the unzipped content of .docx
+  file.
+- Windows wrapper script, and support for using CakeCmd command line unzipper.
+- Configuration file support for easy control over settings.
+- Windows installation script.
+
+Updations:
+- Hyperlink is not displayed if hyperlink and hyperlinked text are same, even
+  though user has enabled hyperlink display.
+- Improved handling of short line justification, capturing many cases that were
+  missed in earlier approach.
+- Path names containing spaces are now handled.
+
+Please refer to the updated documentation for more details.
+
+
 v0.4 : 06/09/2009
 
 New features: [suggestions from "Sergei Kulakov (sergei>AT<dewia>DOT<com)"].
