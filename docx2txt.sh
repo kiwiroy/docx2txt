@@ -38,6 +38,8 @@
 #                 .docx file) argument to keep it's usage in sync with main
 #                 docx2txt.pl script.
 #                 Fixed bug in condition check for input file accessibility.
+#    25/11/2009 - Fixed bug in set expression that was resulting in incorrect
+#                 handling of file/directory names containing spaces.
 #
 
 
@@ -63,7 +65,7 @@ _USAGE_
 # Remove trailing '/'s if any, when input specifies a directory.
 #
 shopt -s extglob
-set ${1%%+(/)}
+set "${1%%+(/)}"
 
 if [ -d "$1" ]
 then
