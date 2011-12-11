@@ -64,6 +64,12 @@
 #    01/10/2009 - Added support for configuration file.
 #    02/10/2009 - Using single quotes to specify path for unzip command. 
 #    04/10/2009 - Corrected configuration option name lineIndent to listIndent.
+#    11/12/2011 - Configuration variables now begin with config_ .
+#                 Configuration file is looked for in HOME directory as well.
+#                 Added a check for existence of unzip command.
+#                 Superscripted cross-references are placed within [...] now.
+#                 Fixed bugs #3003903, #3082018 and #3082035.
+#                 Fixed nulldevice for Cygwin.
 #
 
 
@@ -72,12 +78,17 @@
 # first in current directory and then in the same location as this script.
 #
 
-our $unzip = '/usr/bin/unzip';	# Windows path like 'C:/path/to/unzip.exe'
-our $newLine = "\n";		# Alternative is "\r\n".
-our $listIndent = "  ";		# Indent nested lists by "\t", " " etc.
-our $lineWidth = 80;		# Line width, used for short line justification.
-our $showHyperLink = "N";	# Show hyperlink alongside linked text.
+our $config_unzip = '/usr/bin/unzip';	# Windows path like 'C:/path/to/unzip.exe'
 
+our $config_newLine = "\n";		# Alternative is "\r\n".
+our $config_listIndent = "  ";		# Indent nested lists by "\t", " " etc.
+our $config_lineWidth = 80;		# Line width, used for short line justification.
+our $config_showHyperLink = "N";	# Show hyperlink alongside linked text.
+
+#
+# Some experimental settings.
+#
+our $config_exp_extra_deEscape = "N";   # Extra conversion of &...; sequences.
 
 # ToDo: Better list handling. Currently assumed 8 level nesting.
 my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
@@ -136,7 +147,6 @@ my %splchars = (
 	"\xC2\xA5" => 'Yen',
 	"\xE2\x82\xAC" => 'Euro'
 );
-
 
 #
 # Check argument(s) sanity.
@@ -197,13 +207,16 @@ else {
 
 
 #
-# Get user configuration, if any.
+# Look for user configuration, if any, in current directory/ home directory/
+# same directory as this script.
 #
 
 my %config;
 
 if (-f "docx2txt.config") {
     %config = do 'docx2txt.config';
+} elsif (-f "$ENV{HOME}/docx2txt.config") {
+    %config = do "$ENV{HOME}/docx2txt.config";
 } elsif ($0 =~ m%^(.*[/\\])[^/\\]*?$%) {
     %config = do "$1docx2txt.config" if (-f "$1docx2txt.config");
 }
@@ -214,12 +227,18 @@ if (%config) {
     }
 }
 
+#
+# Check for unzip utility, before proceeding further.
+#
+
+die "Failed to locate unzip command '$config_unzip'!\n" if ! -f $config_unzip;
+
 
 #
 # Extract xml document content from argument docx file/directory.
 #
 
-if ($ENV{OS} =~ /^Windows/) {
+if ($ENV{OS} =~ /^Windows/ && -e $ENV{OSTYPE}) {
     $nulldevice = "nul";
 } else {
     $nulldevice = "/dev/null";
@@ -228,7 +247,7 @@ if ($ENV{OS} =~ /^Windows/) {
 if ($inpIsDir eq 'y') {
     readFileInto("$ARGV[0]/word/document.xml", $content);
 } else {
-    $content = `"$unzip" -p "$ARGV[0]" word/document.xml 2>$nulldevice`;
+    $content = `"$config_unzip" -p "$ARGV[0]" word/document.xml 2>$nulldevice`;
 }
 
 die "Failed to extract required information from <$ARGV[0]>!\n" if ! $content;
@@ -260,7 +279,7 @@ binmode $txtfile;    # Ensure no auto-conversion of '\n' to '\r\n' on Windows.
 if ($inpIsDir eq 'y') {
     readFileInto("$ARGV[0]/word/_rels/document.xml.rels", $_);
 } else {
-    $_ = `"$unzip" -p "$ARGV[0]" word/_rels/document.xml.rels 2>$nulldevice`;
+    $_ = `"$config_unzip" -p "$ARGV[0]" word/_rels/document.xml.rels 2>$nulldevice`;
 }
 
 my %docurels;
@@ -277,10 +296,10 @@ while (/<Relationship Id="(.*?)" Type=".*?\/([^\/]*?)" Target="(.*?)"( .*?)?\/>/
 sub justify {
     my $len = length $_[1];
 
-    if ($_[0] eq "center" && $len < ($lineWidth - 1)) {
-        return ' ' x (($lineWidth - $len) / 2) . $_[1];
-    } elsif ($_[0] eq "right" && $len < $lineWidth) {
-        return ' ' x ($lineWidth - $len) . $_[1];
+    if ($_[0] eq "center" && $len < ($config_lineWidth - 1)) {
+        return ' ' x (($config_lineWidth - $len) / 2) . $_[1];
+    } elsif ($_[0] eq "right" && $len < $config_lineWidth) {
+        return ' ' x ($config_lineWidth - $len) . $_[1];
     } else {
         return $_[1];
     }
@@ -296,7 +315,7 @@ sub hyperlink {
     my $hlink = $docurels{"hyperlink:$hlrid"};
 
     $hltext =~ s/<[^>]*?>//og;
-    $hltext .= " [HYPERLINK: $hlink]" if ($showHyperLink eq "y" && $hltext ne $hlink);
+    $hltext .= " [HYPERLINK: $hlink]" if (lc $config_showHyperLink eq "y" && $hltext ne $hlink);
 
     return $hltext;
 }
@@ -306,7 +325,7 @@ sub hyperlink {
 #
 
 sub processParagraph {
-    my $para = $_[0] . "$newLine";
+    my $para = $_[0] . "$config_newLine";
     my $align = $1 if ($_[0] =~ /<w:jc w:val="([^"]*?)"\/>/);
 
     $para =~ s/<.*?>//og;
@@ -314,13 +333,6 @@ sub processParagraph {
 
     return $para;
 }
-
-
-#
-# Force configuration value to lowercase as expected by script.
-#
-$showHyperLink = lc $showHyperLink;
-
 
 #
 # Text extraction starts.
@@ -330,33 +342,35 @@ my %tag2chr = (tab => "\t", noBreakHyphen => "-", softHyphen => " - ");
 
 $content =~ s/<?xml .*?\?>(\r)?\n//;
 
-# Remove stuff between TOC related tags.
-if ($content =~ m|<w:pStyle w:val="TOCHeading"/>|) {
-    $content =~ s|<w:instrText[^>]*>.*?</w:instrText>||og;
-}
+# Remove the field instructions (instrText) and data (fldData).
+$content =~ s|<w:instrText[^>]*>.*?</w:instrText>||og;
+$content =~ s|<w:fldData[^>]*>[^<]*?</w:fldData>||og;
+
+# Mark cross-reference superscripting within [...].
+$content =~ s|<w:vertAlign w:val="superscript"/></w:rPr><w:t>(.*?)</w:t>|[$1]|og;
 
 $content =~ s{<w:(tab|noBreakHyphen|softHyphen)/>}|$tag2chr{$1}|og;
 
-my $hr = '-' x $lineWidth . $newLine;
+my $hr = '-' x $config_lineWidth . $config_newLine;
 $content =~ s|<w:pBdr>.*?</w:pBdr>|$hr|og;
 
-$content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$listIndent x $1 . "$levchar[$1] "|oge;
+$content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$config_listIndent x $1 . "$levchar[$1] "|oge;
 
 #
 # Uncomment either of below two lines and comment above line, if dealing
 # with more than 8 level nested lists.
 #
 
-# $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$listIndent x $1 . '* '|oge;
+# $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$config_listIndent x $1 . '* '|oge;
 # $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|'*' x ($1+1) . ' '|oge;
 
 $content =~ s{<w:caps/>.*?(<w:t>|<w:t [^>]+>)(.*?)</w:t>}/uc $2/oge;
 
 $content =~ s{<w:hyperlink r:id="(.*?)".*?>(.*?)</w:hyperlink>}/hyperlink($1,$2)/oge;
 
-$content =~ s/<w:p [^>]+?>(.*?)<\/w:p>/processParagraph($1)/oge;
+$content =~ s/<w:p[^>]+?>(.*?)<\/w:p>/processParagraph($1)/oge;
 
-$content =~ s{<w:p [^/>]+?/>|</w:p>|<w:br/>}|$newLine|og;
+$content =~ s{<w:p [^/>]+?/>|</w:p>|<w:br/>}|$config_newLine|og;
 $content =~ s/<.*?>//og;
 
 
@@ -372,11 +386,10 @@ $content =~ s/(\xE2..|\xC2.|\xC3.)/($splchars{$1} ? $splchars{$1} : $1)/oge;
 $content =~ s/(&)(amp|gt|lt)(;)/$escChrs{lc $2}/iog;
 
 #
-# Another pass for a better text experience, after sequences like "&amp;laquo;"
-# are converted to "&laquo;".
+# Another pass for experimental text experience, after sequences like
+# "&amp;laquo;" are converted to "&laquo;".
 #
-$content =~ s/((&)([a-z]+)(;))/($escChrs{lc $3} ? $escChrs{lc $3} : $1)/ioge;
-
+$content =~ s/((&)([a-z]+)(;))/($escChrs{lc $3} ? $escChrs{lc $3} : $1)/ioge if (lc $config_exp_extra_deEscape eq "y");
 
 #
 # Write the extracted and converted text contents to output.

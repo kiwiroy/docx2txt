@@ -1,3 +1,16 @@
+v1.1 : 11/12/2011
+
+New features:
+- Added a check for existence of unzip command.
+- Configuration file is looked for in HOME directory as well.
+
+Updates:
+- Configuration variables now begin with config_ .
+- Fixed bugs #3003903, #3082018 and #3082035.
+- Fixed nulldevice for Cygwin.
+- Superscripted cross-references are placed within [...] now.
+
+
 v1.0 : 04/10/2009
 
 New features:
@@ -7,7 +20,7 @@ New features:
 - Configuration file support for easy control over settings.
 - Windows installation script.
 
-Updations:
+Updates:
 - Hyperlink is not displayed if hyperlink and hyperlinked text are same, even
   though user has enabled hyperlink display.
 - Improved handling of short line justification, capturing many cases that were
@@ -23,7 +36,7 @@ New features: [suggestions from "Sergei Kulakov (sergei>AT<dewia>DOT<com)"].
 - user can control display of hyperlink along with linked text.
 - TOC related cleanup. TOC was not addressed so far.
 
-Updations:
+Updates:
 - many new character conversions (check the script code for details).
 - character conversion mappings are now organised in a tabular form.
 - currency characters are converted to respective full currency name.

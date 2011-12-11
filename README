@@ -50,18 +50,17 @@ system.
 Tune your Experience
 --------------------
 
-You can change these settings via docx2txt.config file located either in current
-directory or in same location as the docx2txt.pl script.
+You can change these settings via docx2txt.config file that is looked for in the
+current directory, HOME directory, and in the same location as the docx2txt.pl
+script (in the specified order). In case script does not find any configuration
+file, it continues with builtin default settings.
  
-- path to unzip program
-- newline in output text file (Unix/Dos way)
-- list level indentation amount
-- line width (used for short line justification)
-- showing of hyperlink along with linked text
-
-Settings take preference in the order - docx2txt.config file in current folder,
-docx2txt.config file in same location as docx2txt.pl script, defaults hardcoded
-in docx2txt.pl script.
+- Path to unzip program
+- Newline in output text file (Unix/Dos way)
+- List level indentation amount
+- Line width (used for short line justification)
+- Showing of hyperlink along with linked text
+- Extra conversion of &...; sequences [Experimental, not needed normally]
 
 You can also adjust list element indicator characters for different levels, in
 docx2txt.pl to suit your formatting taste. Currently 8 level list nesting is

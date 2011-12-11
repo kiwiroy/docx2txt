@@ -1,7 +1,6 @@
 1. Handle lists in better way. [partly worked on, target latest by v2.0]
 
-2. Heuristics based cleanup of damaged document content. [leaving for this
-   release - looking for more test samples, target v1.1]
+2. Heuristics based cleanup of damaged document content. [Looking for more test samples.]
 
 3. Extract images. Now there has been a user request as well. [target pre v2.0]
 4. Handle footnotes.
