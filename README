@@ -51,9 +51,9 @@ Tune your Experience
 --------------------
 
 You can change these settings via docx2txt.config file that is looked for in the
-current directory, HOME directory, and in the same location as the docx2txt.pl
-script (in the specified order). In case script does not find any configuration
-file, it continues with builtin default settings.
+current directory, HOME directory, /etc, and in the same location as the
+docx2txt.pl script (in the specified order). In case script does not find any
+configuration file, it continues with builtin default settings.
  
 - Path to unzip program
 - Newline in output text file (Unix/Dos way)

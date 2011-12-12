@@ -70,6 +70,8 @@
 #                 Superscripted cross-references are placed within [...] now.
 #                 Fixed bugs #3003903, #3082018 and #3082035.
 #                 Fixed nulldevice for Cygwin.
+#    12/12/2011 - Configuration file is also looked for in /etc, default
+#                 location for Unix-ish systems.
 #
 
 
@@ -217,6 +219,8 @@ if (-f "docx2txt.config") {
     %config = do 'docx2txt.config';
 } elsif (-f "$ENV{HOME}/docx2txt.config") {
     %config = do "$ENV{HOME}/docx2txt.config";
+} elsif (-f "/etc/docx2txt.config") {
+    %config = do "/etc/docx2txt.config";
 } elsif ($0 =~ m%^(.*[/\\])[^/\\]*?$%) {
     %config = do "$1docx2txt.config" if (-f "$1docx2txt.config");
 }

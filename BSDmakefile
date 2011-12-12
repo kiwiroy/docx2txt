@@ -2,13 +2,22 @@
 # BSD makefile for docx2txt
 #
 
-INSTALLDIR ?= /usr/local/bin
+BINDIR ?= /usr/local/bin
+CONFIGDIR ?= /etc
+
 INSTALL != which install
 
-Dx2TFILES = docx2txt.sh docx2txt.pl docx2txt.config
+BINFILES = docx2txt.sh docx2txt.pl
+CONFIGFILE = docx2txt.config
 
-install: $(Dx2TFILES)
-	[ -d $(INSTALLDIR) ] || mkdir -p $(INSTALLDIR)
-	$(INSTALL) -m 755 $> $(INSTALLDIR)
+.PHONY: install installbin installconfig
 
-.PHONY: install
+install: installbin installconfig
+
+installbin: $(BINFILES)
+	[ -d $(BINDIR) ] || mkdir -p $(BINDIR)
+	$(INSTALL) -m 755 $> $(BINDIR)
+
+installconfig: $(CONFIGFILE)
+	[ -d $(CONFIGDIR) ] || mkdir -p $(CONFIGDIR)
+	$(INSTALL) -m 755 $> $(CONFIGDIR)
