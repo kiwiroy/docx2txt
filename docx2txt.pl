@@ -72,6 +72,8 @@
 #                 Fixed nulldevice for Cygwin.
 #    12/12/2011 - Configuration file is also looked for in /etc, default
 #                 location for Unix-ish systems.
+#    22/12/2011 - Added &apos; and &quot; to docx specific escape characters
+#                 conversions. [Bug #3463033]
 #
 
 
@@ -99,9 +101,9 @@ my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
 # Character conversion tables
 #
 
-# Only amp, gt and lt are required for docx escapes, others are used for better
-# text experience.
-my %escChrs = (	amp => '&', gt => '>', lt => '<',
+# Only (amp, apos, gt, lt and quot) are the required reserved characters in HTML
+# and XHTML, others are used for better text experience.
+my %escChrs = (	amp => '&', apos => '\'', gt => '>', lt => '<', quot => '"',
 		acute => '\'', brvbar => '|', copy => '(C)', divide => '/',
 		laquo => '<<', macr => '-', nbsp => ' ', raquo => '>>',
 		reg => '(R)', shy => '-', times => 'x'
@@ -385,9 +387,9 @@ $content =~ s/<.*?>//og;
 $content =~ s/(\xE2..|\xC2.|\xC3.)/($splchars{$1} ? $splchars{$1} : $1)/oge;
 
 #
-# Convert docx specific escape chars first.
+# Convert docx specific (reserved HTML/XHTML) escape characters.
 #
-$content =~ s/(&)(amp|gt|lt)(;)/$escChrs{lc $2}/iog;
+$content =~ s/(&)(amp|apos|gt|lt|quot)(;)/$escChrs{lc $2}/iog;
 
 #
 # Another pass for experimental text experience, after sequences like
