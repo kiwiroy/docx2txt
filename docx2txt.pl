@@ -74,6 +74,8 @@
 #                 location for Unix-ish systems.
 #    22/12/2011 - Added &apos; and &quot; to docx specific escape characters
 #                 conversions. [Bug #3463033]
+#    24/12/2011 - Improved handling of special (non-text) characters, along with
+#                 support for more non-text characters.
 #
 
 
@@ -110,46 +112,95 @@ my %escChrs = (	amp => '&', apos => '\'', gt => '>', lt => '<', quot => '"',
 );
 
 my %splchars = (
-	"\xC2\xA0" => ' ',		# <nbsp>
-	"\xC2\xA6" => '|',		# <brokenbar>
-	"\xC2\xA9" => '(C)',		# <copyright>
-	"\xC2\xAB" => '<<',		# <laquo>
-	"\xC2\xAC" => '-',		# <negate>
-	"\xC2\xAE" => '(R)',		# <regd>
-	"\xC2\xB1" => '+-',		# <plusminus>
-	"\xC2\xBB" => '>>',		# <raquo>
+    "\xC2" => {
+	"\xA0" => ' ',		# <nbsp> non-breaking space
+	"\xA2" => 'cent',	# <cent>
+	"\xA3" => 'Pound',	# <pound>
+	"\xA5" => 'Yen',	# <yen>
+	"\xA6" => '|',		# <brvbar> broken vertical bar
+#	"\xA7" => '',		# <sect> section
+	"\xA9" => '(C)',	# <copy> copyright
+	"\xAB" => '<<',		# <laquo> angle quotation mark (left)
+	"\xAC" => '-',		# <not> negation
+	"\xAE" => '(R)',	# <reg> registered trademark
+	"\xB1" => '+-',		# <plusmn> plus-or-minus
+	"\xB4" => '\'',		# <acute>
+	"\xB5" => 'u',		# <micro>
+#	"\xB6" => '',		# <para> paragraph
+	"\xBB" => '>>',		# <raquo> angle quotation mark (right)
+	"\xBC" => '(1/4)',	# <frac14> fraction 1/4
+	"\xBD" => '(1/2)',	# <frac12> fraction 1/2
+	"\xBE" => '(3/4)',	# <frac34> fraction 3/4
+    },
 
-#	"\xC2\xA7" => '',		# <section>
-#	"\xC2\xB6" => '',		# <para>
+    "\xC3" => {
+	"\x97" => 'x',		# <times> multiplication
+	"\xB7" => '/',		# <divide> division
+    },
 
-	"\xC3\x97" => 'x',		# <mul>
-	"\xC3\xB7" => '/',		# <div>
+    "\xCF" => {
+	"\x80" => 'PI',		# <pi>
+    },
 
-	"\xE2\x80\x82" => '  ',		# <enspc>
-	"\xE2\x80\x83" => '  ',		# <emspc>
-	"\xE2\x80\x85" => ' ',		# <qemsp>
-	"\xE2\x80\x93" => ' - ',	# <endash>
-	"\xE2\x80\x94" => ' -- ',	# <emdash>
-	"\xE2\x80\x98" => '`',		# <soq>
-	"\xE2\x80\x99" => '\'',		# <scq>
-	"\xE2\x80\x9C" => '"',		# <doq>
-	"\xE2\x80\x9D" => '"',		# <dcq>
-	"\xE2\x80\xA2" => '::',		# <diamond symbol>
-	"\xE2\x80\xA6" => '...',	# <ellipsis>
+    "\xE2\x80" => {
+	"\x82" => '  ',		# <ensp> en space
+	"\x83" => '  ',		# <emsp> em space
+	"\x85" => ' ',		# <qemsp>
+	"\x93" => ' - ',	# <ndash> en dash
+	"\x94" => ' -- ',	# <mdash> em dash
+	"\x95" => '--',		# <horizontal bar>
+	"\x98" => '`',		# <soq>
+	"\x99" => '\'',		# <scq>
+	"\x9C" => '"',		# <doq>
+	"\x9D" => '"',		# <dcq>
+	"\xA2" => '::',		# <diamond symbol>
+	"\xA6" => '...',	# <hellip> horizontal ellipsis
+	"\xB0" => '%.',		# <permil> per mille
+    },
 
-	"\xE2\x84\xA2" => '(TM)',	# <trademark>
+    "\xE2\x82" => {
+	"\xAC" => 'Euro'	# <euro>
+    },
 
-	"\xE2\x89\xA0" => '!=',		# <neq>
-	"\xE2\x89\xA4" => '<=',		# <leq>
-	"\xE2\x89\xA5" => '>=',		# <geq>
+    "\xE2\x84" => {
+	"\x85" => 'c/o',	# <care/of>
+	"\x97" => '(P)',	# <sound recording copyright>
+	"\xA0" => '(SM)',	# <servicemark>
+	"\xA2" => '(TM)',	# <trade> trademark
+	"\xA6" => 'Ohm',	# <Ohm>
+    },
 
-	#
-	# Currency symbols
-	#
-	"\xC2\xA2" => 'cent',
-	"\xC2\xA3" => 'Pound',
-	"\xC2\xA5" => 'Yen',
-	"\xE2\x82\xAC" => 'Euro'
+    "\xE2\x85" => {
+	"\x93" => '(1/3)',
+	"\x94" => '(2/3)',
+	"\x95" => '(1/5)',
+	"\x96" => '(2/5)',
+	"\x97" => '(3/5)',
+	"\x98" => '(4/5)',
+	"\x99" => '(1/6)',
+	"\x9B" => '(1/8)',
+	"\x9C" => '(3/8)',
+	"\x9D" => '(5/8)',
+	"\x9E" => '(7/8)',
+	"\x9F" => '1/',
+    },
+
+    "\xE2\x86" => {
+	"\x90" => '<--',	# <larr> left arrow
+	"\x92" => '-->',	# <rarr> right arrow
+	"\x94" => '<-->',	# <harr> left right arrow
+    },
+
+    "\xE2\x88" => {
+	"\x82" => 'd',		# partial differential
+	"\x9E" => 'infinity',
+    },
+
+    "\xE2\x89" => {
+	"\xA0" => '!=',		# <neq>
+	"\xA4" => '<=',		# <leq>
+	"\xA5" => '>=',		# <geq>
+    }
 );
 
 #
@@ -384,7 +435,7 @@ $content =~ s/<.*?>//og;
 # Convert non-ASCII characters/character sequences to ASCII characters.
 #
 
-$content =~ s/(\xE2..|\xC2.|\xC3.)/($splchars{$1} ? $splchars{$1} : $1)/oge;
+$content =~ s/(\xC2|\xC3|\xCF|\xE2.)(.)/($splchars{$1}{$2} ? $splchars{$1}{$2} : $1.$2)/oge;
 
 #
 # Convert docx specific (reserved HTML/XHTML) escape characters.
