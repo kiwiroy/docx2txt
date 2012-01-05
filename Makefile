@@ -23,9 +23,18 @@ CONFIGFILE = docx2txt.config
 install: installbin installconfig
 
 installbin: $(BINFILES)
-	[ -d $(BINDIR) ] || mkdir -p $(BINDIR)
-	$(INSTALL) -m 755 $^ $(BINDIR)
+	@echo "Installing script files [$(BINFILES)] in \"$(BINDIR)\" .."
+	@[ -d "$(BINDIR)" ] || mkdir -p "$(BINDIR)"
+	$(INSTALL) -m 755 $^ "$(BINDIR)"
+ifneq ($(PERL),)
+	@echo "Setting systemConfigDir to [$(CONFIGDIR)] in \"$(BINDIR)/docx2txt.pl\" .."
+	$(PERL) -pi -e "s%\"/etc\";%\"$(CONFIGDIR)\";%" "$(BINDIR)/docx2txt.pl"\
+	&& rm -f "$(BINDIR)/docx2txt.pl.bak"
+else
+	@echo "*** Set systemConfigDir to \"$(CONFIGDIR)\" in \"$(BINDIR)/docx2txt.pl\"."
+endif
 
 installconfig: $(CONFIGFILE)
-	[ -d $(CONFIGDIR) ] || mkdir -p $(CONFIGDIR)
-	$(INSTALL) -m 755 $^ $(CONFIGDIR)
+	@echo "Installing config file [$(CONFIGFILE)] in \"$(CONFIGDIR)\" .."
+	@[ -d "$(CONFIGDIR)" ] || mkdir -p "$(CONFIGDIR)"
+	$(INSTALL) -m 755 $^ "$(CONFIGDIR)"
