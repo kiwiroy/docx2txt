@@ -69,19 +69,23 @@
 #                 Added a check for existence of unzip command.
 #                 Superscripted cross-references are placed within [...] now.
 #                 Fixed bugs #3003903, #3082018 and #3082035.
-#                 Fixed nulldevice for Cygwin.
+#                 Fixed nullDevice for Cygwin.
 #    12/12/2011 - Configuration file is also looked for in /etc, default
 #                 location for Unix-ish systems.
 #    22/12/2011 - Added &apos; and &quot; to docx specific escape characters
 #                 conversions. [Bug #3463033]
 #    24/12/2011 - Improved handling of special (non-text) characters, along with
 #                 support for more non-text characters.
+#    05/01/2012 - Configuration file is now looked for in current directory,
+#                 user configuration directory and system configuration
+#                 directory (in the specified order). This streamlining allows
+#                 for per user configuration file even on Windows.
 #
 
 
 #
-# The default settings below can be overridden via docx2txt.config - searched
-# first in current directory and then in the same location as this script.
+# The default settings below can be overridden via docx2txt.config in current
+# directory/ user configuration directory/ system configuration directory.
 #
 
 our $config_unzip = '/usr/bin/unzip';	# Windows path like 'C:/path/to/unzip.exe'
@@ -96,7 +100,28 @@ our $config_showHyperLink = "N";	# Show hyperlink alongside linked text.
 #
 our $config_exp_extra_deEscape = "N";   # Extra conversion of &...; sequences.
 
+#
+# Windows/Non-Windows specific settings. Adjust these here, if needed.
+#
+if ($ENV{OS} =~ /^Windows/ && -e $ENV{OSTYPE}) {
+    $nullDevice = "nul";
+    $userConfigDir = $ENV{APPDATA};
+
+    #
+    # On Windows, configuration file is installed in same folder as this script.
+    #
+    $0 =~ m%^(.*[/\\])[^/\\]*?$%;
+    $systemConfigDir = $1;
+
+} else {
+    $nullDevice = "/dev/null";
+    $userConfigDir = $ENV{HOME};
+    $systemConfigDir = "/etc";
+}
+
+#
 # ToDo: Better list handling. Currently assumed 8 level nesting.
+#
 my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
 
 #
@@ -262,20 +287,18 @@ else {
 
 
 #
-# Look for user configuration, if any, in current directory/ home directory/
-# same directory as this script.
+# Look for configuration file in current directory/ user configuration
+# directory/ system configuration directory - in the given order.
 #
 
 my %config;
 
 if (-f "docx2txt.config") {
     %config = do 'docx2txt.config';
-} elsif (-f "$ENV{HOME}/docx2txt.config") {
-    %config = do "$ENV{HOME}/docx2txt.config";
-} elsif (-f "/etc/docx2txt.config") {
-    %config = do "/etc/docx2txt.config";
-} elsif ($0 =~ m%^(.*[/\\])[^/\\]*?$%) {
-    %config = do "$1docx2txt.config" if (-f "$1docx2txt.config");
+} elsif (-f "$userConfigDir/docx2txt.config") {
+    %config = do "$userConfigDir/docx2txt.config";
+} elsif (-f "$systemConfigDir/docx2txt.config") {
+    %config = do "$systemConfigDir/docx2txt.config";
 }
 
 if (%config) {
@@ -295,16 +318,10 @@ die "Failed to locate unzip command '$config_unzip'!\n" if ! -f $config_unzip;
 # Extract xml document content from argument docx file/directory.
 #
 
-if ($ENV{OS} =~ /^Windows/ && -e $ENV{OSTYPE}) {
-    $nulldevice = "nul";
-} else {
-    $nulldevice = "/dev/null";
-}
-
 if ($inpIsDir eq 'y') {
     readFileInto("$ARGV[0]/word/document.xml", $content);
 } else {
-    $content = `"$config_unzip" -p "$ARGV[0]" word/document.xml 2>$nulldevice`;
+    $content = `"$config_unzip" -p "$ARGV[0]" word/document.xml 2>$nullDevice`;
 }
 
 die "Failed to extract required information from <$ARGV[0]>!\n" if ! $content;
@@ -336,7 +353,7 @@ binmode $txtfile;    # Ensure no auto-conversion of '\n' to '\r\n' on Windows.
 if ($inpIsDir eq 'y') {
     readFileInto("$ARGV[0]/word/_rels/document.xml.rels", $_);
 } else {
-    $_ = `"$config_unzip" -p "$ARGV[0]" word/_rels/document.xml.rels 2>$nulldevice`;
+    $_ = `"$config_unzip" -p "$ARGV[0]" word/_rels/document.xml.rels 2>$nullDevice`;
 }
 
 my %docurels;
