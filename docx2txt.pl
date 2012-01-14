@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # docx2txt, a command-line utility to convert Docx documents to text format.
-# Copyright (C) 2008-2009 Sandeep Kumar
+# Copyright (C) 2008-2012 Sandeep Kumar
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 #
 # This script extracts text from document.xml contained inside .docx file.
-# Perl v5.8.2 was used for testing this script.
+# Perl v5.10.1 was used for testing this script.
 #
 # Author : Sandeep Kumar (shimple0 -AT- Yahoo .DOT. COM)
 #
@@ -80,6 +80,8 @@
 #                 user configuration directory and system configuration
 #                 directory (in the specified order). This streamlining allows
 #                 for per user configuration file even on Windows.
+#    14/01/2012 - Wrong code was committed during earlier fixing of nullDevice
+#                 for Cygwin, fixed that.
 #
 
 
@@ -103,7 +105,7 @@ our $config_exp_extra_deEscape = "N";   # Extra conversion of &...; sequences.
 #
 # Windows/Non-Windows specific settings. Adjust these here, if needed.
 #
-if ($ENV{OS} =~ /^Windows/ && -e $ENV{OSTYPE}) {
+if ($ENV{OS} =~ /^Windows/ && !(exists $ENV{OSTYPE} || exists $ENV{HOME})) {
     $nullDevice = "nul";
     $userConfigDir = $ENV{APPDATA};
 
