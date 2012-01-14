@@ -1,3 +1,33 @@
+v1.2 : 15/01/2012
+
+New features:
+- Perl script usage is extended to accept docx file from standard input. It also
+  works with input/output redirection now. Please refer to the documentation for
+  more information.
+- Script files and configuration file can be installed in separate directories
+  on (non-Windows) systems using Makefile for installation.
+- Linux Makefile also attempts to update the system configuration directory to
+  desired directory in installed Perl script.
+- User specific and system wide configuration files can be maintained separately
+  even on windows.
+
+Updates:
+- "-h" has to be given as the first argument to Perl script to get usage help.
+- Added new configuration variable "config_tempDir".
+- Configuration file is uniformly looked for in current directory, user
+  configuration directory (APPDATA on Windows and HOME on non-Windows), system
+  configuration directory (same location as script files on Windows, /etc or as
+  set during installation on non-Windows systems) in the specified order.
+- Documentation has been updated with usage examples and information on how
+  .docx file text content can directly be viewed using Vim and Emacs editors.
+- Improved handling of special (non-text) characters, along with support for
+  more non-text characters like fractions.
+- Fixed Bug #3463033: added &apos; and &quot; to docx specific escape character
+  conversions.
+- Fixed the wrong code that had got committed during earlier fixing of
+  nullDevice for Cygwin.
+
+
 v1.1 : 11/12/2011
 
 New features:
