@@ -17,12 +17,17 @@ it internally manages unzipping the .docx files that do not have .zip extension.
 Installation on Linux, Cygwin, BSD and similar systems
 ------------------------------------------------------
 
-Type "make" as root to install docx2txt files for all users in /usr/local/bin.
+Type "make" as root to install docx2txt script files for all users in
+/usr/local/bin and system-wide configuration file in /etc .
+
 If you want to install these in some other directory, you can do so via
 
-make INSTALLDIR=/path/to/desired/directory
+make BINDIR=/path/to/scripts/directory CONFIGDIR=/path/to/config/directory
 
 BSD users can use either GNU make or BSD make.
+
+Linux "make" installation also attempts to set systemConfigDir variable in
+installed docx2txt.pl file to specified CONFIGDIR.
 
 You will need make and install utilities installed on your system for
 installation via Makefile.
@@ -30,18 +35,23 @@ installation via Makefile.
 In case, you don't want to use Makefile for installation, you can follow these
 steps for manual installation.
 
-1. Copy docx2txt.pl, docx2txt.sh and docx2txt.config to the desired directory.
+1. Copy docx2txt.pl, docx2txt.sh and docx2txt.config to the desired directories.
 
-   cp docx2txt.pl docx2txt.sh docx2txt.config /path/to/desired/directory
+   cp docx2txt.pl docx2txt.sh /path/to/scripts/directory
+   cp docx2txt.config /path/to/config/directory
 
 2. Change the permission of copied files to 755 for docx2txt.pl and docx2txt.sh,
    and 644 for docx2txt.config .
 
-   chmod a+rX /path/to/desired/directory/docx2txt.*
+   chmod 755 /path/to/scripts/directory/docx2txt.*
+   chmod 644 /path/to/config/directory/docx2txt.config
 
-3. Add the concerned directory to your PATH, if not already in PATH.
+3. Change the value of systemConfigDir variable (in non-Windows settings) in
+   installed docx2txt.pl file from "/etc" to specified config directory.
 
-   PATH=$PATH:/path/to/desired/directory
+4. Add the concerned scripts directory to your PATH, if not already in PATH.
+
+   PATH=$PATH:/path/to/scripts/directory
 
 
 Installation on Windows
@@ -78,6 +88,8 @@ d. You can now use this tool from within C:\docx2txt as follows.
    perl docx2txt.pl directory/file.docx file.txt
    perl docx2txt.pl C:/somedir/file.docx
    perl docx2txt.pl C:\somedir\file.docx C:\otherdir\converted.txt
+
+   Please view README for further usage information.
 
 III. You can also install this utility via WInstall.bat and follow the
    instructions during installation. WInstall.bat can be invoked in two ways.
