@@ -82,6 +82,9 @@
 #                 for per user configuration file even on Windows.
 #    14/01/2012 - Wrong code was committed during earlier fixing of nullDevice
 #                 for Cygwin, fixed that.
+#                 Usage is extended to accept docx file from standard input.
+#                 "-h" has to be given as the first argument to get usage help.
+#                 Added new configuration variable "config_tempDir".
 #
 
 
@@ -96,15 +99,20 @@ our $config_newLine = "\n";		# Alternative is "\r\n".
 our $config_listIndent = "  ";		# Indent nested lists by "\t", " " etc.
 our $config_lineWidth = 80;		# Line width, used for short line justification.
 our $config_showHyperLink = "N";	# Show hyperlink alongside linked text.
+our $config_tempDir;			# Directory for temporary file creation.
+
 
 #
 # Some experimental settings.
 #
+
 our $config_exp_extra_deEscape = "N";   # Extra conversion of &...; sequences.
+
 
 #
 # Windows/Non-Windows specific settings. Adjust these here, if needed.
 #
+
 if ($ENV{OS} =~ /^Windows/ && !(exists $ENV{OSTYPE} || exists $ENV{HOME})) {
     $nullDevice = "nul";
     $userConfigDir = $ENV{APPDATA};
@@ -115,16 +123,21 @@ if ($ENV{OS} =~ /^Windows/ && !(exists $ENV{OSTYPE} || exists $ENV{HOME})) {
     $0 =~ m%^(.*[/\\])[^/\\]*?$%;
     $systemConfigDir = $1;
 
+    $config_tempDir = "$ENV{TEMP}";
 } else {
     $nullDevice = "/dev/null";
     $userConfigDir = $ENV{HOME};
     $systemConfigDir = "/etc";
+
+    $config_tempDir = "/tmp";
 }
+
 
 #
 # ToDo: Better list handling. Currently assumed 8 level nesting.
 #
 my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
+
 
 #
 # Character conversion tables
@@ -230,62 +243,32 @@ my %splchars = (
     }
 );
 
+
 #
 # Check argument(s) sanity.
 #
 
 my $usage = <<USAGE;
 
-Usage:	$0 <infile.docx> [outfile.txt|-]
+Usage:	$0 [infile.docx|-|-h] [outfile.txt|-]
+	$0 < infile.docx
+	$0 < infile.docx > outfile.txt
+
+	In second usage, output is dumped on STDOUT.
+
+	Use '-h' as the first argument to get this usage information.
+
+	Use '-' as the infile name to read the docx file from STDIN.
 
 	Use '-' as the outfile name to dump the text on STDOUT.
 	Output is saved in infile.txt if second argument is omitted.
 
-	infile.docx can also be a directory name holding the unzipped content
+Note:	infile.docx can also be a directory name holding the unzipped content
 	of concerned .docx file.
 
 USAGE
 
-die $usage if (@ARGV == 0 || @ARGV > 2);
-
-
-#
-# Check for existence and readability of required file in specified directory,
-# and whether it is a text file.
-#
-
-sub check_for_required_file_in_folder {
-    stat("$_[1]/$_[0]");
-    die "Can't read <$_[0]> in <$_[1]>!\n" if ! (-f _ && -r _);
-    die "<$_[1]/$_[0]> does not seem to be a text file!\n" if ! -T _;
-}
-
-sub readFileInto
-{
-  local $/ = undef;
-  open my $fh, "$_[0]" or die "Couldn't read file <$_[0]>!\n";
-  binmode $fh;
-  $_[1] = <$fh>;
-  close $fh;
-}
-
-
-#
-# Check whether first argument is specifying a directory holding extracted
-# content of .docx file, or .docx file itself.
-#
-
-stat($ARGV[0]);
-
-if (-d _) {
-    check_for_required_file_in_folder("word/document.xml", $ARGV[0]);
-    check_for_required_file_in_folder("word/_rels/document.xml.rels", $ARGV[0]);
-    $inpIsDir = 'y';
-}
-else {
-    die "Can't read docx file <$ARGV[0]>!\n" if ! (-f _ && -r _);
-    die "<$ARGV[0]> does not seem to be docx file!\n" if -T _;
-}
+die $usage if (@ARGV > 2 || $ARGV[0] eq '-h');
 
 
 #
@@ -317,6 +300,80 @@ die "Failed to locate unzip command '$config_unzip'!\n" if ! -f $config_unzip;
 
 
 #
+# Handle cases where this script reads docx file from STDIN.
+#
+
+if (@ARGV == 0) {
+    $ARGV[0] = '-';
+    $ARGV[1] = '-';
+    $inputFileName = "STDIN";
+} elsif (@ARGV == 1 && $ARGV[0] eq '-') {
+    $ARGV[1] = '-';
+    $inputFileName = "STDIN";
+} else {
+    $inputFileName = $ARGV[0];
+}
+
+if ($ARGV[0] eq '-') {
+    $tempFile = "${config_tempDir}/dx2tTemp_${$}_" . time() . ".docx";
+    open my $fhTemp, "> $tempFile" or die "Can't create temporary file for storing docx file read from STDIN!\n";
+
+    binmode $fhTemp;
+    local $/ = undef;
+    my $docxFileContent = <STDIN>;
+
+    print $fhTemp $docxFileContent;
+    close $fhTemp;
+
+    $ARGV[0] = $tempFile;
+}
+
+
+#
+# Check for existence and readability of required file in specified directory,
+# and whether it is a text file.
+#
+
+sub check_for_required_file_in_folder {
+    stat("$_[1]/$_[0]");
+    die "Can't read <$_[0]> in <$_[1]>!\n" if ! (-f _ && -r _);
+    die "<$_[1]/$_[0]> does not seem to be a text file!\n" if ! -T _;
+}
+
+sub readFileInto {
+    local $/ = undef;
+    open my $fh, "$_[0]" or die "Couldn't read file <$_[0]>!\n";
+    binmode $fh;
+    $_[1] = <$fh>;
+    close $fh;
+}
+
+
+#
+# Check whether first argument is specifying a directory holding extracted
+# content of .docx file, or .docx file itself.
+#
+
+sub cleandie {
+    unlink("$tempFile") if -e "$tempFile";
+    die "$_[0]";
+}
+    
+
+stat($ARGV[0]);
+
+if (-d _) {
+    check_for_required_file_in_folder("word/document.xml", $ARGV[0]);
+    check_for_required_file_in_folder("word/_rels/document.xml.rels", $ARGV[0]);
+    $inpIsDir = 'y';
+}
+else {
+    cleandie "Can't read docx file <$inputFileName>!\n" if ! (-f _ && -r _);
+    cleandie "<$inputFileName> does not seem to be a docx file!\n" if -T _;
+}
+
+
+#
 # Extract xml document content from argument docx file/directory.
 #
 
@@ -326,7 +383,7 @@ if ($inpIsDir eq 'y') {
     $content = `"$config_unzip" -p "$ARGV[0]" word/document.xml 2>$nullDevice`;
 }
 
-die "Failed to extract required information from <$ARGV[0]>!\n" if ! $content;
+cleandie "Failed to extract required information from <$inputFileName>!\n" if ! $content;
 
 
 #
@@ -344,7 +401,7 @@ if (@ARGV == 1) {
 }
 
 my $txtfile;
-open($txtfile, "> $ARGV[1]") || die "Can't create <$ARGV[1]> for output!\n";
+open($txtfile, "> $ARGV[1]") || cleandie "Can't create <$ARGV[1]> for output!\n";
 binmode $txtfile;    # Ensure no auto-conversion of '\n' to '\r\n' on Windows.
 
 
@@ -363,6 +420,10 @@ while (/<Relationship Id="(.*?)" Type=".*?\/([^\/]*?)" Target="(.*?)"( .*?)?\/>/
 {
     $docurels{"$2:$1"} = $3;
 }
+
+# Remove the temporary file (if) created to store input from STDIN. All the
+# (needed) data is read from it already.
+unlink("$tempFile") if -e "$tempFile";
 
 
 #
