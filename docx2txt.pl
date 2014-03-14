@@ -85,6 +85,9 @@
 #                 Usage is extended to accept docx file from standard input.
 #                 "-h" has to be given as the first argument to get usage help.
 #                 Added new configuration variable "config_tempDir".
+#    14/03/2014 - Remove deleted text from output. This effects in case changes
+#                 are being tracked in docx document. Patch was contributed by
+#                 William Parsons (wbparsons>AT<cshore>DOT<com).
 #
 
 
@@ -482,6 +485,9 @@ $content =~ s/<?xml .*?\?>(\r)?\n//;
 # Remove the field instructions (instrText) and data (fldData).
 $content =~ s|<w:instrText[^>]*>.*?</w:instrText>||og;
 $content =~ s|<w:fldData[^>]*>[^<]*?</w:fldData>||og;
+
+# Remove deleted text.
+$content =~ s|<w:delText[^>]*>.*?</w:delText>||og;
 
 # Mark cross-reference superscripting within [...].
 $content =~ s|<w:vertAlign w:val="superscript"/></w:rPr><w:t>(.*?)</w:t>|[$1]|og;
