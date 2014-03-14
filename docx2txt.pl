@@ -88,6 +88,7 @@
 #    14/03/2014 - Remove deleted text from output. This effects in case changes
 #                 are being tracked in docx document. Patch was contributed by
 #                 William Parsons (wbparsons>AT<cshore>DOT<com).
+#                 Removed experimental config option config_exp_extra_deEscape.
 #
 
 
@@ -103,13 +104,6 @@ our $config_listIndent = "  ";		# Indent nested lists by "\t", " " etc.
 our $config_lineWidth = 80;		# Line width, used for short line justification.
 our $config_showHyperLink = "N";	# Show hyperlink alongside linked text.
 our $config_tempDir;			# Directory for temporary file creation.
-
-
-#
-# Some experimental settings.
-#
-
-our $config_exp_extra_deEscape = "N";   # Extra conversion of &...; sequences.
 
 
 #
@@ -527,12 +521,6 @@ $content =~ s/(\xC2|\xC3|\xCF|\xE2.)(.)/($splchars{$1}{$2} ? $splchars{$1}{$2} :
 # Convert docx specific (reserved HTML/XHTML) escape characters.
 #
 $content =~ s/(&)(amp|apos|gt|lt|quot)(;)/$escChrs{lc $2}/iog;
-
-#
-# Another pass for experimental text experience, after sequences like
-# "&amp;laquo;" are converted to "&laquo;".
-#
-$content =~ s/((&)([a-z]+)(;))/($escChrs{lc $3} ? $escChrs{lc $3} : $1)/ioge if (lc $config_exp_extra_deEscape eq "y");
 
 #
 # Write the extracted and converted text contents to output.
