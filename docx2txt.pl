@@ -89,6 +89,7 @@
 #                 are being tracked in docx document. Patch was contributed by
 #                 William Parsons (wbparsons>AT<cshore>DOT<com).
 #                 Removed experimental config option config_exp_extra_deEscape.
+#    27/03/2014 - Remove non-document_text content marked by wp/wp14 tags.
 #
 
 
@@ -475,6 +476,8 @@ sub processParagraph {
 my %tag2chr = (tab => "\t", noBreakHyphen => "-", softHyphen => " - ");
 
 $content =~ s/<?xml .*?\?>(\r)?\n//;
+
+$content =~ s{<(wp14|wp):[^>]*>.*?</\1:[^>]*>}||og;
 
 # Remove the field instructions (instrText) and data (fldData).
 $content =~ s|<w:instrText[^>]*>.*?</w:instrText>||og;
