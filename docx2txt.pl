@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # docx2txt, a command-line utility to convert Docx documents to text format.
-# Copyright (C) 2008-2012 Sandeep Kumar
+# Copyright (C) 2008-2014 Sandeep Kumar
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -90,6 +90,10 @@
 #                 William Parsons (wbparsons>AT<cshore>DOT<com).
 #                 Removed experimental config option config_exp_extra_deEscape.
 #    27/03/2014 - Remove non-document_text content marked by wp/wp14 tags.
+#    07/04/2014 - Added support for handling lists (bullet, decimal, letter,
+#                 roman) along with (attempt at) indentation.
+#                 Added new configuration variable config_twipsPerChar.
+#                 Removed configuration variable config_listIndent.
 #
 
 
@@ -101,10 +105,10 @@
 our $config_unzip = '/usr/bin/unzip';	# Windows path like 'C:/path/to/unzip.exe'
 
 our $config_newLine = "\n";		# Alternative is "\r\n".
-our $config_listIndent = "  ";		# Indent nested lists by "\t", " " etc.
 our $config_lineWidth = 80;		# Line width, used for short line justification.
 our $config_showHyperLink = "N";	# Show hyperlink alongside linked text.
 our $config_tempDir;			# Directory for temporary file creation.
+our $config_twipsPerChar = 120;		# Approx mapping for layout purpose.
 
 
 #
@@ -129,12 +133,6 @@ if ($ENV{OS} =~ /^Windows/ && !(exists $ENV{OSTYPE} || exists $ENV{HOME})) {
 
     $config_tempDir = "/tmp";
 }
-
-
-#
-# ToDo: Better list handling. Currently assumed 8 level nesting.
-#
-my @levchar = ('*', '+', 'o', '-', '**', '++', 'oo', '--');
 
 
 #
@@ -346,6 +344,24 @@ sub readFileInto {
     close $fh;
 }
 
+sub readOptionalFileInto {
+    local $/ = undef;
+
+    stat("$_[0]");
+    if (-f _) {
+        if (-r _ && -T _) {
+            open my $fh, "$_[0]" or die "Couldn't read file <$_[0]>!\n";
+            binmode $fh;
+            $_[1] = <$fh>;
+            close $fh;
+        }
+        else {
+            die "Invalid <$_[0]>!\n";
+        }
+    }
+}
+
+
 
 #
 # Check whether first argument is specifying a directory holding extracted
@@ -419,6 +435,53 @@ while (/<Relationship Id="(.*?)" Type=".*?\/([^\/]*?)" Target="(.*?)"( .*?)?\/>/
     $docurels{"$2:$1"} = $3;
 }
 
+#
+# Gather list numbering information.
+#
+
+$_ = "";
+if ($inpIsDir eq 'y') {
+    readOptionalFileInto("$ARGV[0]/word/numbering.xml", $_);
+} else {
+    $_ = `"$config_unzip" -p "$ARGV[0]" word/numbering.xml 2>$nullDevice`;
+}
+
+my %abstractNum;
+my @N2ANId = ();
+
+my %NFList = (
+    "bullet"      => \&bullet,
+    "decimal"     => \&decimal,
+    "lowerLetter" => \&lowerLetter,
+    "upperLetter" => \&upperLetter,
+    "lowerRoman"  => \&lowerRoman,
+    "upperRoman"  => \&upperRoman
+);
+
+if ($_) {
+    while (/<w:abstractNum w:abstractNumId="(\d+)">(.*?)<\/w:abstractNum>/g)
+    {
+        my $abstractNumId = $1, $temp = $2;
+
+        while ($temp =~ /<w:lvl w:ilvl="(\d+)"[^>]*>.*?<w:numFmt w:val="(.*?)"[^>]*>.*?<w:lvlText w:val="(.*?)"[^>]*>.*?<w:ind w:left="(\d+)" [^>]*>/g )
+        {
+            # $2: NumFmt, $3: LvlText, $4: Indent (twips)
+
+            @{$abstractNum{"$abstractNumId:$1"}} = (
+                $NFList{$2},
+                $3,
+                int (($4 / $config_twipsPerChar) + 0.5),
+                $4
+            );
+        }
+    }
+
+    while ( /<w:num w:numId="(\d+)"><w:abstractNumId w:val="(\d+)"/g )
+    {
+        $N2ANId[$1] = $2;
+    }
+}
+
 # Remove the temporary file (if) created to store input from STDIN. All the
 # (needed) data is read from it already.
 unlink("$tempFile") if -e "$tempFile";
@@ -456,12 +519,132 @@ sub hyperlink {
 }
 
 #
+# Subroutines for processing numbering information.
+#
+
+my @RomanNumbers = ( "",
+    "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii",
+    "xiii", "xiv", "xv", "xvi", "xvii", "xviii", "xix", "xx", "xxi", "xxii",
+    "xxiii", "xxiv", "xxv", "xxvi", "xxvii", "xxviii", "xxix", "xxx", "xxxi",
+    "xxxii", "xxxiii", "xxxiv", "xxxv", "xxxvi", "xxxvii", "xxxviii", "xxxix",
+    "xl", "xli", "xlii", "xliii", "xliv", "xlv", "xlvi", "xlvii", "xlviii",
+    "xlix", "l", "li" );
+
+
+sub lowerRoman {
+    return $RomanNumbers[$_[0]] if ($_[0] < @RomanNumbers);
+
+    @rcode = ("i", "iv", "v", "ix", "x", "xl", "l", "xc", "c", "cd", "d", "cm", "m");
+    @dval = (1, 4, 5, 9, 10, 40, 50, 90, 100, 400, 500, 900, 1000);
+
+    my $roman = "";
+    my $num = $_[0];
+
+    my $div, $i = (@rcode - 1);
+    while ($num > 0) {
+        $i-- while ($num < $dval[$i]);
+        $div = $num / $dval[$i];
+        $num = $num % $dval[$i];
+        $roman .= $rcode[$i] x $div;
+    }
+
+    return $roman;
+}
+
+sub upperRoman {
+    return uc lowerRoman(@_);
+}
+
+
+sub lowerLetter {
+    @Alphabets = split '' , "abcdefghijklmnopqrstuvwxyz";
+    return $Alphabets[($_[0] % 26) - 1] x (($_[0] - 1)/26 + 1);
+}
+
+sub upperLetter {
+    return uc lowerLetter(@_);
+}
+
+
+sub decimal {
+    return $_[0];
+}
+
+
+my %bullets = (
+    "\x6F" => 'o',
+    "\xEF\x81\xB6" => '::',	# Diamond
+    "\xEF\x82\xA7" => '#',	# Small Black Square
+    "\xEF\x82\xB7" => '*',	# Small Black Circle
+    "\xEF\x83\x98" => '>',	# Arrowhead
+    "\xEF\x83\xBC" => '+'	# Right Sign
+);
+
+sub bullet {
+    return $bullets{$_[0]} ? $bullets{$_[0]} : 'oo';
+}
+    
+my @lastCnt = (0);
+my @twipStack = (0);
+my @keyStack = (undef);
+my $ssiz = 1;
+
+sub listNumbering {
+    my $aref = \@{$abstractNum{"$N2ANId[$_[0]]:$_[1]"}};
+    my $key = "$N2ANId[$_[0]]:$_[1]";
+    my $ccnt;
+
+    if ($aref->[3] < $twipStack[$ssiz-1]) {
+        while ($twipStack[$ssiz-1] > $aref->[3]) {
+            pop @twipStack;
+            pop @keyStack;
+            pop @lastCnt;
+            $ssiz--;
+        }
+    }
+
+    if ($aref->[3] == $twipStack[$ssiz-1]) {
+        if ($key eq $keyStack[$ssiz-1]) {
+            ++$lastCnt[$ssiz-1];
+        }
+        else {
+            $keyStack[$ssiz-1] = $key;
+            $lastCnt[$ssiz-1] = 1;
+        }
+    }
+    elsif ($aref->[3] > $twipStack[$ssiz-1]) {
+        push @twipStack, $aref->[3];
+        push @keyStack, $key;
+        push @lastCnt, 1;
+        $ssiz++;
+    }
+
+    $ccnt = $lastCnt[$ssiz-1];
+    my $lvlText;
+
+    if ($aref->[0] != \&bullet) {
+        $lvlText = $aref->[1];
+        $lvlText =~ s/%\d([^%]*)$/($aref->[0]->($ccnt)).$1/oe;
+
+        my $i = $ssiz - 2;
+        $i-- while ($lvlText =~ s/%\d([^%]*)$/$lastCnt[$i]$1/o);
+    }
+    else {
+        $lvlText = $aref->[0]->($aref->[1]);
+    }
+
+    return ' ' x $aref->[2] . $lvlText . ' ';
+}
+
+#
 # Subroutines for processing paragraph content.
 #
 
 sub processParagraph {
     my $para = $_[0] . "$config_newLine";
     my $align = $1 if ($_[0] =~ /<w:jc w:val="([^"]*?)"\/>/);
+
+    $para =~ s|<w:numPr><w:ilvl w:val="(\d+)"/><w:numId w:val="(\d+)"\/>|listNumbering($2,$1)|oge;
 
     $para =~ s/<.*?>//og;
     return justify($align,$para) if $align;
@@ -493,16 +676,6 @@ $content =~ s{<w:(tab|noBreakHyphen|softHyphen)/>}|$tag2chr{$1}|og;
 
 my $hr = '-' x $config_lineWidth . $config_newLine;
 $content =~ s|<w:pBdr>.*?</w:pBdr>|$hr|og;
-
-$content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$config_listIndent x $1 . "$levchar[$1] "|oge;
-
-#
-# Uncomment either of below two lines and comment above line, if dealing
-# with more than 8 level nested lists.
-#
-
-# $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|$config_listIndent x $1 . '* '|oge;
-# $content =~ s|<w:numPr><w:ilvl w:val="([0-9]+)"/>|'*' x ($1+1) . ' '|oge;
 
 $content =~ s{<w:caps/>.*?(<w:t>|<w:t [^>]+>)(.*?)</w:t>}/uc $2/oge;
 
