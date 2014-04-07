@@ -1,3 +1,17 @@
+v1.3 : 07/04/2014
+
+New features:
+- Added support for handling lists (bullet, decimal, letter, roman) along
+  with (attempt at) indentation.
+
+Updates:
+- Added configuration variable config_twipsPerChar.
+- Removed configuration variables: config_listIndent, config_exp_extra_deEscape.
+- Text output omits deleted text. This matters in case changes are being
+  tracked in docx document.
+- Text output omits non-document_text content marked by wp/wp14 tags.
+
+
 v1.2 : 15/01/2012
 
 New features:

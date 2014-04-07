@@ -88,15 +88,12 @@ continues with builtin default settings.
 a. Path to unzip program
 b. Path to temp directory
 c. Newline in output text file (Unix/Dos way)
-d. List level indentation amount
-e. Line width (used for short line justification)
-f. Showing of hyperlink along with linked text
-g. Extra conversion of &...; sequences [Experimental, not needed normally]
+d. Line width (used for short line justification)
+e. Showing of hyperlink along with linked text
+f. Twips per character, to obtain desired list indentation in text output
 
-You can also adjust list element indicator characters for different levels, in
-docx2txt.pl to suit your formatting taste. Currently 8 level list nesting is
-assumed, however if you want to deal with deeper nesting, you can adjust that
-as well in the perl script, by following the related comments there.
+You can also adjust representative bullet indicators in docx2txt.pl, but be
+careful while modifying it.
 
 
 Viewing the text content of Docx file in Editors and File browsers
