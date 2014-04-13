@@ -94,6 +94,7 @@
 #                 roman) along with (attempt at) indentation.
 #                 Added new configuration variable config_twipsPerChar.
 #                 Removed configuration variable config_listIndent.
+#    14/04/2014 - Fixed list numbering - lvl start value needs to be considered.
 #
 
 
@@ -463,15 +464,16 @@ if ($_) {
     {
         my $abstractNumId = $1, $temp = $2;
 
-        while ($temp =~ /<w:lvl w:ilvl="(\d+)"[^>]*>.*?<w:numFmt w:val="(.*?)"[^>]*>.*?<w:lvlText w:val="(.*?)"[^>]*>.*?<w:ind w:left="(\d+)" [^>]*>/g )
+	while ($temp =~ /<w:lvl w:ilvl="(\d+)"[^>]*><w:start w:val="(\d+)"[^>]*><w:numFmt w:val="(.*?)"[^>]*>.*?<w:lvlText w:val="(.*?)"[^>]*>.*?<w:ind w:left="(\d+)" [^>]*>/g )
         {
-            # $2: NumFmt, $3: LvlText, $4: Indent (twips)
+            # $2: Start $3: NumFmt, $4: LvlText, $5: Indent (twips)
 
             @{$abstractNum{"$abstractNumId:$1"}} = (
-                $NFList{$2},
-                $3,
-                int (($4 / $config_twipsPerChar) + 0.5),
-                $4
+                $NFList{$3},
+                $4,
+                $2,
+                int (($5 / $config_twipsPerChar) + 0.5),
+                $5
             );
         }
     }
@@ -594,8 +596,8 @@ sub listNumbering {
     my $key = "$N2ANId[$_[0]]:$_[1]";
     my $ccnt;
 
-    if ($aref->[3] < $twipStack[$ssiz-1]) {
-        while ($twipStack[$ssiz-1] > $aref->[3]) {
+    if ($aref->[4] < $twipStack[$ssiz-1]) {
+        while ($twipStack[$ssiz-1] > $aref->[4]) {
             pop @twipStack;
             pop @keyStack;
             pop @lastCnt;
@@ -603,19 +605,19 @@ sub listNumbering {
         }
     }
 
-    if ($aref->[3] == $twipStack[$ssiz-1]) {
+    if ($aref->[4] == $twipStack[$ssiz-1]) {
         if ($key eq $keyStack[$ssiz-1]) {
             ++$lastCnt[$ssiz-1];
         }
         else {
             $keyStack[$ssiz-1] = $key;
-            $lastCnt[$ssiz-1] = 1;
+            $lastCnt[$ssiz-1] = $aref->[2];
         }
     }
-    elsif ($aref->[3] > $twipStack[$ssiz-1]) {
-        push @twipStack, $aref->[3];
+    elsif ($aref->[4] > $twipStack[$ssiz-1]) {
+        push @twipStack, $aref->[4];
         push @keyStack, $key;
-        push @lastCnt, 1;
+        push @lastCnt, $aref->[2];
         $ssiz++;
     }
 
@@ -633,7 +635,7 @@ sub listNumbering {
         $lvlText = $aref->[0]->($aref->[1]);
     }
 
-    return ' ' x $aref->[2] . $lvlText . ' ';
+    return ' ' x $aref->[3] . $lvlText . ' ';
 }
 
 #
