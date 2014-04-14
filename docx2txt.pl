@@ -95,6 +95,7 @@
 #                 Added new configuration variable config_twipsPerChar.
 #                 Removed configuration variable config_listIndent.
 #    14/04/2014 - Fixed list numbering - lvl start value needs to be considered.
+#                 Improved list indentation and corresponding code.
 #
 
 
@@ -237,6 +238,10 @@ my %splchars = (
 	"\xA0" => '!=',		# <neq>
 	"\xA4" => '<=',		# <leq>
 	"\xA5" => '>=',		# <geq>
+    },
+
+    "\xEF\x82" => {
+	"\xB7" => '*'		# small white square
     }
 );
 
@@ -464,15 +469,15 @@ if ($_) {
     {
         my $abstractNumId = $1, $temp = $2;
 
-	while ($temp =~ /<w:lvl w:ilvl="(\d+)"[^>]*><w:start w:val="(\d+)"[^>]*><w:numFmt w:val="(.*?)"[^>]*>.*?<w:lvlText w:val="(.*?)"[^>]*>.*?<w:ind w:left="(\d+)" [^>]*>/g )
+	while ($temp =~ /<w:lvl w:ilvl="(\d+)"[^>]*><w:start w:val="(\d+)"[^>]*><w:numFmt w:val="(.*?)"[^>]*>.*?<w:lvlText w:val="(.*?)"[^>]*>.*?<w:ind w:left="(\d+)" w:hanging="(\d+)"[^>]*>/g )
         {
-            # $2: Start $3: NumFmt, $4: LvlText, $5: Indent (twips)
+            # $2: Start $3: NumFmt, $4: LvlText, ($5,$6): (Indent (twips), hanging)
 
             @{$abstractNum{"$abstractNumId:$1"}} = (
                 $NFList{$3},
                 $4,
                 $2,
-                int (($5 / $config_twipsPerChar) + 0.5),
+                int ((($5-$6) / $config_twipsPerChar) + 0.5),
                 $5
             );
         }
@@ -593,38 +598,39 @@ my $ssiz = 1;
 
 sub listNumbering {
     my $aref = \@{$abstractNum{"$N2ANId[$_[0]]:$_[1]"}};
-    my $key = "$N2ANId[$_[0]]:$_[1]";
-    my $ccnt;
-
-    if ($aref->[4] < $twipStack[$ssiz-1]) {
-        while ($twipStack[$ssiz-1] > $aref->[4]) {
-            pop @twipStack;
-            pop @keyStack;
-            pop @lastCnt;
-            $ssiz--;
-        }
-    }
-
-    if ($aref->[4] == $twipStack[$ssiz-1]) {
-        if ($key eq $keyStack[$ssiz-1]) {
-            ++$lastCnt[$ssiz-1];
-        }
-        else {
-            $keyStack[$ssiz-1] = $key;
-            $lastCnt[$ssiz-1] = $aref->[2];
-        }
-    }
-    elsif ($aref->[4] > $twipStack[$ssiz-1]) {
-        push @twipStack, $aref->[4];
-        push @keyStack, $key;
-        push @lastCnt, $aref->[2];
-        $ssiz++;
-    }
-
-    $ccnt = $lastCnt[$ssiz-1];
     my $lvlText;
 
     if ($aref->[0] != \&bullet) {
+        my $key = "$N2ANId[$_[0]]:$_[1]";
+        my $ccnt;
+
+        if ($aref->[4] < $twipStack[$ssiz-1]) {
+            while ($twipStack[$ssiz-1] > $aref->[4]) {
+                pop @twipStack;
+                pop @keyStack;
+                pop @lastCnt;
+                $ssiz--;
+            }
+        }
+
+        if ($aref->[4] == $twipStack[$ssiz-1]) {
+            if ($key eq $keyStack[$ssiz-1]) {
+                ++$lastCnt[$ssiz-1];
+            }
+            else {
+                $keyStack[$ssiz-1] = $key;
+                $lastCnt[$ssiz-1] = $aref->[2];
+            }
+        }
+        elsif ($aref->[4] > $twipStack[$ssiz-1]) {
+            push @twipStack, $aref->[4];
+            push @keyStack, $key;
+            push @lastCnt, $aref->[2];
+            $ssiz++;
+        }
+
+        $ccnt = $lastCnt[$ssiz-1];
+
         $lvlText = $aref->[1];
         $lvlText =~ s/%\d([^%]*)$/($aref->[0]->($ccnt)).$1/oe;
 
@@ -645,8 +651,6 @@ sub listNumbering {
 sub processParagraph {
     my $para = $_[0] . "$config_newLine";
     my $align = $1 if ($_[0] =~ /<w:jc w:val="([^"]*?)"\/>/);
-
-    $para =~ s|<w:numPr><w:ilvl w:val="(\d+)"/><w:numId w:val="(\d+)"\/>|listNumbering($2,$1)|oge;
 
     $para =~ s/<.*?>//og;
     return justify($align,$para) if $align;
@@ -683,6 +687,7 @@ $content =~ s{<w:caps/>.*?(<w:t>|<w:t [^>]+>)(.*?)</w:t>}/uc $2/oge;
 
 $content =~ s{<w:hyperlink r:id="(.*?)".*?>(.*?)</w:hyperlink>}/hyperlink($1,$2)/oge;
 
+$content =~ s|<w:numPr><w:ilvl w:val="(\d+)"/><w:numId w:val="(\d+)"\/>|listNumbering($2,$1)|oge;
 $content =~ s/<w:p[^>]+?>(.*?)<\/w:p>/processParagraph($1)/oge;
 
 $content =~ s{<w:p [^/>]+?/>|</w:p>|<w:br/>}|$config_newLine|og;
@@ -693,7 +698,7 @@ $content =~ s/<.*?>//og;
 # Convert non-ASCII characters/character sequences to ASCII characters.
 #
 
-$content =~ s/(\xC2|\xC3|\xCF|\xE2.)(.)/($splchars{$1}{$2} ? $splchars{$1}{$2} : $1.$2)/oge;
+$content =~ s/(\xC2|\xC3|\xCF|\xE2.|\xEF.)(.)/($splchars{$1}{$2} ? $splchars{$1}{$2} : $1.$2)/oge;
 
 #
 # Convert docx specific (reserved HTML/XHTML) escape characters.
