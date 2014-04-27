@@ -96,6 +96,7 @@
 #                 Removed configuration variable config_listIndent.
 #    14/04/2014 - Fixed list numbering - lvl start value needs to be considered.
 #                 Improved list indentation and corresponding code.
+#    27/04/2014 - Improved paragraph content layout/indentation.
 #
 
 
@@ -668,12 +669,9 @@ $content =~ s/<?xml .*?\?>(\r)?\n//;
 
 $content =~ s{<(wp14|wp):[^>]*>.*?</\1:[^>]*>}||og;
 
-# Remove the field instructions (instrText) and data (fldData).
-$content =~ s|<w:instrText[^>]*>.*?</w:instrText>||og;
-$content =~ s|<w:fldData[^>]*>[^<]*?</w:fldData>||og;
-
-# Remove deleted text.
-$content =~ s|<w:delText[^>]*>.*?</w:delText>||og;
+# Remove the field instructions (instrText) and data (fldData), and deleted
+# text.
+$content =~ s{<w:(instrText|fldData|delText)[^>]*>.*?</w:\1>}||ogs;
 
 # Mark cross-reference superscripting within [...].
 $content =~ s|<w:vertAlign w:val="superscript"/></w:rPr><w:t>(.*?)</w:t>|[$1]|og;
@@ -688,9 +686,13 @@ $content =~ s{<w:caps/>.*?(<w:t>|<w:t [^>]+>)(.*?)</w:t>}/uc $2/oge;
 $content =~ s{<w:hyperlink r:id="(.*?)".*?>(.*?)</w:hyperlink>}/hyperlink($1,$2)/oge;
 
 $content =~ s|<w:numPr><w:ilvl w:val="(\d+)"/><w:numId w:val="(\d+)"\/>|listNumbering($2,$1)|oge;
-$content =~ s/<w:p[^>]+?>(.*?)<\/w:p>/processParagraph($1)/oge;
 
-$content =~ s{<w:p [^/>]+?/>|</w:p>|<w:br/>}|$config_newLine|og;
+$content =~ s{<w:ind w:(left|firstLine)="(\d+)"( w:hanging="(\d+)")?[^>]*>}|' ' x int((($2-$4)/$config_twipsPerChar)+0.5)|oge;
+
+$content =~ s{<w:p [^/>]+?/>|<w:br/>}|$config_newLine|og;
+
+$content =~ s/<w:p[^>]+?>(.*?)<\/w:p>/processParagraph($1)/ogse;
+
 $content =~ s/<.*?>//og;
 
 
