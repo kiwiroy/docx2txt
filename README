@@ -1,9 +1,27 @@
 docx2txt (http://docx2txt.sourceforge.net/) is a simple tool to generate
-equivalent text files from Microsoft .docx documents, with an attempt towards
-preserving sufficient formatting and document information, and appropriate
-character conversions for a good text experience.
+equivalent text files from (even corrupted) Microsoft .docx documents, with an
+attempt towards preserving sufficient formatting and document information, and
+appropriate character conversions for a good text experience.
 
-You need to atleast have perl installed on your system for using this tool.
+
+Dependencies
+------------
+
+You will need to have following programs installed on your system for using this
+tool.
+
+Mandatory :
+
+* PERL
+* A commandline unzipping program that can silently extract single file from
+  zip archive to console/standard output/pipe.
+
+  Unzip, 7-Zip (7z), PKZip (pkzipc), and WinZip (wzunzip) are some such known
+  programs that serve the purpose when invoked with appropriate command/options.
+
+Optional :
+
+* Bash [Needed only if you want to use wrapper docx2txt.sh]
 
 
 How to Use
@@ -66,8 +84,7 @@ environment.
 
 Input argument in all the above cases can also be a directory holding the
 unzipped content of a .docx file. This feature is particulary useful if you do
-not have a commandline unzipping tool like Unzip/CakeCmd installed on your
-system.
+not have a commandline unzipping program as required in dependencies.
 
 Usage help can be obtained by giving '-h' as the first argument to the script.
 
@@ -85,7 +102,7 @@ You can change following settings via docx2txt.config file that is looked for
 in the specified order. In case script does not find any configuration file, it
 continues with builtin default settings.
  
-a. Path to unzip program
+a. Path to unzip program, and relevant command/options to be passed to it [#]
 b. Path to temp directory
 c. Newline in output text file (Unix/Dos way)
 d. Line width (used for short line justification)
@@ -94,6 +111,13 @@ f. Twips per character, to obtain desired list indentation in text output
 
 You can also adjust representative bullet indicators in docx2txt.pl, but be
 careful while modifying it.
+
+[#] Unzipping Program | Relevant Command/Options
+    ------------------+------------------------------------------------------
+      unzip           |  -p
+      7z              |  e -so -tzip
+      pkzipc          |  -console -silent -translate=none -noarchiveextension
+      wzunzip         |  -c
 
 
 Viewing the text content of Docx file in Editors and File browsers
@@ -147,6 +171,35 @@ buffer/file, it will overwrite the .docx file with the text content.
 Please explore "Filters -- making things readable:" section at
 http://www.emacswiki.org/emacs/CategoryExternalUtilities for more ways to view
 .docx file text content directly in emacs.
+
+
+Recovering text from corrupted .docx file
+-----------------------------------------
+
+A .docx file is a zip archive of a collection of XML files. Two kind of
+corruptions - zip archive corruption, and component XML file(s) corruption, can
+cause a common Docx Reader/Viewer to fail while reading the file.
+
+The way docx2txt.pl extracts text content from .docx file, it is somewhat immune
+to XML corruption, and can extract reasonable text content from even corrupted
+XML file.
+
+As for zip archive corruption, if you have an unzipper that can fix a corrupted
+zip archive[#] and/or extract atleast required XML files from a corrupted zip
+archive[*], you are ready to extract text from the corrupted .docx file. You may
+temporarily need to rename .docx file as .zip file, if required by unzipper.
+
+If this unzipper can extract specific files to pipe/standard output/console, you
+can simply specify it in config file. Otherwise you can extract the archive
+content in a directory, suitably named as per your need, and specify this
+directory as the filename argument to the docx2txt.pl script.
+
+[#] Program Name  |  Example Usage
+    --------------+------------------------------------------------------
+    zip           |  zip -FF corrupted.docx --out fixed.docx
+    ALZipCon      |  ALZipCon.exe -r corrupted.zip
+    pkzipc        |  pkzipc.exe -fix t.zip
+    winrar[GUI]   |  Repair archive, [*] Keep broken extracted files
 
 
 Request

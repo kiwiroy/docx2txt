@@ -97,6 +97,8 @@
 #    14/04/2014 - Fixed list numbering - lvl start value needs to be considered.
 #                 Improved list indentation and corresponding code.
 #    27/04/2014 - Improved paragraph content layout/indentation.
+#    13/05/2014 - Added new configuration variable config_unzip_opts. Users can
+#                 now use unzipping programs like 7z, pkzipc, winzip as well.
 #
 
 
@@ -106,6 +108,7 @@
 #
 
 our $config_unzip = '/usr/bin/unzip';	# Windows path like 'C:/path/to/unzip.exe'
+our $config_unzip_opts = '-p';		# To extract file on standard output
 
 our $config_newLine = "\n";		# Alternative is "\r\n".
 our $config_lineWidth = 80;		# Line width, used for short line justification.
@@ -398,10 +401,12 @@ else {
 # Extract xml document content from argument docx file/directory.
 #
 
+my $unzip_cmd = "'$config_unzip' $config_unzip_opts";
+
 if ($inpIsDir eq 'y') {
     readFileInto("$ARGV[0]/word/document.xml", $content);
 } else {
-    $content = `"$config_unzip" -p "$ARGV[0]" word/document.xml 2>$nullDevice`;
+    $content = `$unzip_cmd "$ARGV[0]" word/document.xml 2>$nullDevice`;
 }
 
 cleandie "Failed to extract required information from <$inputFileName>!\n" if ! $content;
@@ -433,7 +438,7 @@ binmode $txtfile;    # Ensure no auto-conversion of '\n' to '\r\n' on Windows.
 if ($inpIsDir eq 'y') {
     readFileInto("$ARGV[0]/word/_rels/document.xml.rels", $_);
 } else {
-    $_ = `"$config_unzip" -p "$ARGV[0]" word/_rels/document.xml.rels 2>$nullDevice`;
+    $_ = `$unzip_cmd "$ARGV[0]" word/_rels/document.xml.rels 2>$nullDevice`;
 }
 
 my %docurels;
@@ -450,7 +455,7 @@ $_ = "";
 if ($inpIsDir eq 'y') {
     readOptionalFileInto("$ARGV[0]/word/numbering.xml", $_);
 } else {
-    $_ = `"$config_unzip" -p "$ARGV[0]" word/numbering.xml 2>$nullDevice`;
+    $_ = `$unzip_cmd "$ARGV[0]" word/numbering.xml 2>$nullDevice`;
 }
 
 my %abstractNum;

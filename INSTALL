@@ -89,7 +89,7 @@ d. You can now use this tool from within C:\docx2txt as follows.
    perl docx2txt.pl C:/somedir/file.docx
    perl docx2txt.pl C:\somedir\file.docx C:\otherdir\converted.txt
 
-   Please view README for further usage information.
+   Please view README for further examples using I/O redirection.
 
 III. You can also install this utility via WInstall.bat and follow the
    instructions during installation. WInstall.bat can be invoked in two ways.
@@ -107,6 +107,9 @@ III. You can also install this utility via WInstall.bat and follow the
 
    - Cygwin perl or Strawberry perl [http://strawberryperl.com/] or any other
      Windows native perl implementation 
-   - Cygwin unzip or UnZip for Windows [http://gnuwin32.sourceforge.net/downlinks/unzip.php]
-   - CakeCmd unzipper [http://www.quickzip.org/cakecmd.html]
-
+   - Any commandline unzipper meeting the dependencies requirement in README.
+     * Cygwin unzip or UnZip for Windows [http://gnuwin32.sourceforge.net/downlinks/unzip.php]
+     * 7z [http://www.7-zip.org/]
+     * pkzipc [http://www.pkware.com/software/pkzip/]
+     * wzunzip [http://www.winzip.com/]
+     * CakeCmd unzipper [http://www.quickzip.org/cakecmd.html]
