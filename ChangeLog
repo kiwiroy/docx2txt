@@ -1,6 +1,20 @@
+v1.4 : 15/05/2014
+
+New feature:
+- Added configuration variable config_unzip_opts. This removes dependency on
+  unzip program, and allows users to use unzipping programs like 7z, pkzipc,
+  winzip as well.
+
+Updates:
+- Fixed list numbering.
+- Improved list/paragraph indentation and corresponding code.
+- Updated README with brief guidance on how this utility can be used to recover
+  text from corrupted docx file.
+
+
 v1.3 : 07/04/2014
 
-New features:
+New feature:
 - Added support for handling lists (bullet, decimal, letter, roman) along
   with (attempt at) indentation.
 
