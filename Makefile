@@ -23,6 +23,7 @@ CONFIGFILE = docx2txt.config
 install: installbin installconfig
 
 installbin: $(BINFILES)
+	$(eval override BINDIR := $(ROOTDIR)/$(BINDIR))
 	@echo "Installing script files [$(BINFILES)] in \"$(BINDIR)\" .."
 	@[ -d "$(BINDIR)" ] || mkdir -p "$(BINDIR)"
 	$(INSTALL) -m 755 $^ "$(BINDIR)"
@@ -35,6 +36,7 @@ else
 endif
 
 installconfig: $(CONFIGFILE)
+	$(eval override CONFIGDIR := $(ROOTDIR)/$(CONFIGDIR))
 	@echo "Installing config file [$(CONFIGFILE)] in \"$(CONFIGDIR)\" .."
 	@[ -d "$(CONFIGDIR)" ] || mkdir -p "$(CONFIGDIR)"
 	$(INSTALL) -m 755 $^ "$(CONFIGDIR)"
