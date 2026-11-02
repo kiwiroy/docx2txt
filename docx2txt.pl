@@ -406,6 +406,24 @@ else {
 #
 
 #
+# Normalise insignificant XML whitespace, as produced by pretty-printers, into
+# the compact form the regular expressions below expect: collapse whitespace
+# inside tags, and drop whitespace-only text between tags (except directly
+# inside a <w:t> text run, where it is content).
+#
+
+sub normalizeXmlSpace {
+    $_[0] =~ s{<([^<>]*)>}{
+        my $t = $1;
+        $t =~ s/\s+/ /g;
+        $t =~ s/^ //;
+        $t =~ s/ (\/?)$/$1/;
+        "<$t>"
+    }ge;
+    $_[0] =~ s{(<(?!w:t[ >])[^<>]*>)\s+(?=<|\z)}{$1}g;
+}
+
+#
 # Run unzip directly rather than via a shell, so that the docx file name is
 # never interpreted as shell code.  A leading "./" keeps a file name starting
 # with "-" from being taken as an option.
@@ -435,6 +453,7 @@ if ($inpIsDir eq 'y') {
 }
 
 cleandie "Failed to extract required information from <$inputFileName>!\n" if ! $content;
+normalizeXmlSpace($content);
 
 
 #
@@ -469,6 +488,7 @@ if ($inpIsDir eq 'y') {
 } else {
     $_ = unzipMember('word/_rels/document.xml.rels');
 }
+normalizeXmlSpace($_);
 
 my %docurels;
 while (/<Relationship Id="(.*?)" Type=".*?\/([^\/]*?)" Target="(.*?)"( .*?)?\/>/g)
@@ -486,6 +506,7 @@ if ($inpIsDir eq 'y') {
 } else {
     $_ = unzipMember('word/numbering.xml');
 }
+normalizeXmlSpace($_);
 
 my %abstractNum;
 my @N2ANId = ();
