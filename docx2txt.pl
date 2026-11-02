@@ -103,8 +103,8 @@
 
 
 #
-# The default settings below can be overridden via docx2txt.config in current
-# directory/ user configuration directory/ system configuration directory.
+# The default settings below can be overridden via docx2txt.config in the
+# user configuration directory/ system configuration directory.
 #
 
 our $config_unzip = '/usr/bin/unzip';	# Windows path like 'C:/path/to/unzip.exe'
@@ -278,15 +278,14 @@ die $usage if (@ARGV > 2 || $ARGV[0] eq '-h');
 
 
 #
-# Look for configuration file in current directory/ user configuration
-# directory/ system configuration directory - in the given order.
+# Look for configuration file in user configuration directory/ system
+# configuration directory - in the given order.  (The configuration file is
+# perl code, so it is deliberately not read from the current directory.)
 #
 
 my %config;
 
-if (-f "docx2txt.config") {
-    %config = do 'docx2txt.config';
-} elsif (-f "$userConfigDir/docx2txt.config") {
+if (-f "$userConfigDir/docx2txt.config") {
     %config = do "$userConfigDir/docx2txt.config";
 } elsif (-f "$systemConfigDir/docx2txt.config") {
     %config = do "$systemConfigDir/docx2txt.config";
@@ -321,8 +320,13 @@ if (@ARGV == 0) {
 }
 
 if ($ARGV[0] eq '-') {
-    $tempFile = "${config_tempDir}/dx2tTemp_${$}_" . time() . ".docx";
-    open my $fhTemp, "> $tempFile" or die "Can't create temporary file for storing docx file read from STDIN!\n";
+    require File::Temp;
+    my $fhTemp;
+    ($fhTemp, $tempFile) = eval {
+        File::Temp::tempfile("dx2tTempXXXXXXXXXX", DIR => $config_tempDir,
+                             SUFFIX => ".docx", UNLINK => 0);
+    };
+    die "Can't create temporary file for storing docx file read from STDIN!\n" if ! $fhTemp;
 
     binmode $fhTemp;
     local $/ = undef;
@@ -348,7 +352,7 @@ sub check_for_required_file_in_folder {
 
 sub readFileInto {
     local $/ = undef;
-    open my $fh, "$_[0]" or die "Couldn't read file <$_[0]>!\n";
+    open my $fh, '<', $_[0] or die "Couldn't read file <$_[0]>!\n";
     binmode $fh;
     $_[1] = <$fh>;
     close $fh;
@@ -360,7 +364,7 @@ sub readOptionalFileInto {
     stat("$_[0]");
     if (-f _) {
         if (-r _ && -T _) {
-            open my $fh, "$_[0]" or die "Couldn't read file <$_[0]>!\n";
+            open my $fh, '<', $_[0] or die "Couldn't read file <$_[0]>!\n";
             binmode $fh;
             $_[1] = <$fh>;
             close $fh;
@@ -401,12 +405,33 @@ else {
 # Extract xml document content from argument docx file/directory.
 #
 
-my $unzip_cmd = "'$config_unzip' $config_unzip_opts";
+#
+# Run unzip directly rather than via a shell, so that the docx file name is
+# never interpreted as shell code.  A leading "./" keeps a file name starting
+# with "-" from being taken as an option.
+#
+
+my $unzipInput = $ARGV[0];
+$unzipInput = "./$unzipInput" if $unzipInput =~ /^-/;
+
+sub unzipMember {
+    local $/ = undef;
+    open(my $savedErr, '>&', \*STDERR);
+    open(STDERR, '>', $nullDevice);
+    my $ok = open(my $fh, '-|', $config_unzip, split(' ', $config_unzip_opts),
+                  $unzipInput, $_[0]);
+    open(STDERR, '>&', $savedErr);
+    return '' if ! $ok;
+    binmode $fh;
+    my $data = <$fh>;
+    close $fh;
+    return defined $data ? $data : '';
+}
 
 if ($inpIsDir eq 'y') {
     readFileInto("$ARGV[0]/word/document.xml", $content);
 } else {
-    $content = `$unzip_cmd "$ARGV[0]" word/document.xml 2>$nullDevice`;
+    $content = unzipMember('word/document.xml');
 }
 
 cleandie "Failed to extract required information from <$inputFileName>!\n" if ! $content;
@@ -427,7 +452,11 @@ if (@ARGV == 1) {
 }
 
 my $txtfile;
-open($txtfile, "> $ARGV[1]") || cleandie "Can't create <$ARGV[1]> for output!\n";
+if ($ARGV[1] eq '-') {
+    open($txtfile, '>&', \*STDOUT) || cleandie "Can't create <$ARGV[1]> for output!\n";
+} else {
+    open($txtfile, '>', $ARGV[1]) || cleandie "Can't create <$ARGV[1]> for output!\n";
+}
 binmode $txtfile;    # Ensure no auto-conversion of '\n' to '\r\n' on Windows.
 
 
@@ -438,7 +467,7 @@ binmode $txtfile;    # Ensure no auto-conversion of '\n' to '\r\n' on Windows.
 if ($inpIsDir eq 'y') {
     readFileInto("$ARGV[0]/word/_rels/document.xml.rels", $_);
 } else {
-    $_ = `$unzip_cmd "$ARGV[0]" word/_rels/document.xml.rels 2>$nullDevice`;
+    $_ = unzipMember('word/_rels/document.xml.rels');
 }
 
 my %docurels;
@@ -455,7 +484,7 @@ $_ = "";
 if ($inpIsDir eq 'y') {
     readOptionalFileInto("$ARGV[0]/word/numbering.xml", $_);
 } else {
-    $_ = `$unzip_cmd "$ARGV[0]" word/numbering.xml 2>$nullDevice`;
+    $_ = unzipMember('word/numbering.xml');
 }
 
 my %abstractNum;
